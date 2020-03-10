@@ -38,7 +38,9 @@
     "socket.io-client": "^2.2.0",
     "systeminformation": "^4.4.1",
     "winston": "^3.2.1",
-    "ws": "^7.0.0"
+    "ws": "^7.0.0",
+    "commander": "^4.1.1",
+    "firebase": "^7.8.2"
   },
   "scripts": {
     "test": "jest",
@@ -47,7 +49,7 @@
     "watch-nodemon": "nodemon dist/index.js",
     "watch-node": "node dist/index.js",
     "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript, Node\" -c \"yello.bold, cyan.bold\" \"yarn run watch-ts\" \"yarn run watch-nodemon\"",
-    "start": "tsc && node dist/index.js serve",
+    "start": "tsc && node dist/index.js start",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint --fix src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts"
   }
