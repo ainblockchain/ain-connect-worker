@@ -57,20 +57,20 @@ export const firebaseConfig = {
   measurementId,
 };
 
-// Worker Config
+// Cluster Config
 export const {
-  WORKER_NAME,
+  CLUSTER_NAME,
   DESCRIPTION,
   MNEMONIC,
 } = process.env;
 export const PRICE = Number(process.env.PRICE) / 3600;
-export const MAX_SERVICE_COUNT = Number(process.env.MAX_INSTANCE_COUNT) || 5;
+export const MAX_CONTAINER_COUNT = Number(process.env.MAX_CONTAINER_COUNT) || 5;
 
 const key = HDKey.fromMasterSeed(mnemonicToSeedSync(MNEMONIC!));
 const mainWallet = key.derive("m/44'/412'/0'/0/0"); /* default wallet address for AIN */
 export const SECRET_KEY = `0x${mainWallet.privateKey.toString('hex')}`;
-export const WORKER_ADDR = ainUtil.toChecksumAddress(`0x${ainUtil.pubToAddress(mainWallet.publicKey, true).toString('hex')}`);
-export const WORKER_KEY = `${WORKER_ADDR}/${WORKER_NAME}`;
+export const CLUSTER_ADDR = ainUtil.toChecksumAddress(`0x${ainUtil.pubToAddress(mainWallet.publicKey, true).toString('hex')}`);
+export const CLUSTER_KEY = `${CLUSTER_ADDR}@${CLUSTER_NAME}`;
 
 export const ERROR_MESSAGE = {
   500: 'failed to start',

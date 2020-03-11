@@ -51,7 +51,7 @@
     "watch-node": "node dist/index.js",
     "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript, Node\" -c \"yello.bold, cyan.bold\" \"yarn run watch-ts\" \"yarn run watch-nodemon\"",
     "start": "tsc && node dist/index.js start",
-    "lint": "eslint src/**/*.ts",
+    "lint": "eslint src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts",
     "lint:fix": "eslint --fix src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts"
   }
 }

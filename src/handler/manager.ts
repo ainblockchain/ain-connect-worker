@@ -1,7 +1,7 @@
 import * as firebase from 'firebase/app';
 import * as constants from '../common/constants';
 import Logger from '../common/logger';
-import Service from '../manager/service';
+import Container from '../manager/container';
 import encryptionHelper from '../util/encryption';
 import 'firebase/firestore';
 import 'firebase/auth';
@@ -22,10 +22,10 @@ export default class Manager {
 
   start() {
     firebase.initializeApp(constants.firebaseConfig);
-    const listener = firebase.firestore().collection(`worker_list/${constants.WORKER_ADDR}/request_queue`);
+    const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_ADDR}/request_queue`);
     listener.onSnapshot(this.createEvent);
-    this.checkServices();
-    log.info(`[+] start to listen on Manager firestore [Worker Key: ${constants.WORKER_KEY}]`);
+    this.checkContainers();
+    log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
   }
 
   public createEvent = async (
@@ -35,57 +35,57 @@ export default class Manager {
         const requestId: string = change.doc.id;
         const params = change.doc.data();
         const {
-          serviceId, address, price, reserveAmount, type,
+          containerId, address, price, reserveAmount, type,
         } = params;
         log.debug(`[+] requested <type: ${type}, address: ${address}>`);
-        const service = Service.getInstance();
+        const container = Container.getInstance();
         try {
           if (type === 'ADD') {
-            await service.start(serviceId, address, price!, reserveAmount!);
+            await container.start(containerId, address, price!, reserveAmount!);
           } else if (type === 'TERMINATE') {
-            await service.terminate(serviceId);
+            await container.terminate(containerId);
           } else if (type === 'EXTEND') {
-            await service.extend(serviceId, price!, reserveAmount!);
+            await container.extend(containerId, price!, reserveAmount!);
           } else {
             throw new Error('4');
           }
 
           const resMassage = encryptionHelper.signatureMessage(
-            { workerKey: constants.WORKER_ADDR, requestId, success: '0' },
-            constants.WORKER_ADDR, constants.SECRET_KEY,
+            { clusterKey: constants.CLUSTER_ADDR, requestId, success: '0' },
+            constants.CLUSTER_ADDR, constants.SECRET_KEY,
           );
-          await firebase.functions().httpsCallable('requestServiceResponse')(resMassage);
+          await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
           log.debug(`[+] succeded to ${type} <publicKey: ${address}>`);
         } catch (error) {
           const errCode = (constants.ERROR_MESSAGE[error]) ? error : 500;
           const resMassage = encryptionHelper.signatureMessage(
             {
-              workerKey: constants.WORKER_ADDR,
+              clusterKey: constants.CLUSTER_ADDR,
               requestId,
               errCode,
               errMessage: constants.ERROR_MESSAGE[errCode],
             },
-            constants.WORKER_ADDR, constants.SECRET_KEY,
+            constants.CLUSTER_ADDR, constants.SECRET_KEY,
           );
-          await firebase.functions().httpsCallable('requestServiceResponse')(resMassage);
+          await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
           log.debug(`[+] failed to ${type} <publicKey: ${address}> - ${error}`);
         }
       }
     });
   }
 
-  private checkServices() {
+  private checkContainers() {
     setInterval(async () => {
-      const service = Service.getInstance();
-      const terminateServices = service.getTerminateServices();
-      terminateServices.forEach(async (serviceId: string) => {
-        log.debug(`[+] terminate <serviceId: ${serviceId}>`);
-        await service.terminate(serviceId);
+      const container = Container.getInstance();
+      const terminateContainers = container.getTerminateContainers();
+      terminateContainers.forEach(async (containerId: string) => {
+        log.debug(`[+] terminate <containerId: ${containerId}>`);
+        await container.terminate(containerId);
         const resMassage = encryptionHelper.signatureMessage(
-          { workerKey: constants.WORKER_ADDR, requestId: 'requestId', success: 0 },
-          constants.WORKER_ADDR, constants.SECRET_KEY,
+          { clusterKey: constants.CLUSTER_ADDR, requestId: 'requestId', success: 0 },
+          constants.CLUSTER_ADDR, constants.SECRET_KEY,
         );
-        await firebase.functions().httpsCallable('requestServiceResponse')(resMassage);
+        await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
       });
     }, 1000);
   }

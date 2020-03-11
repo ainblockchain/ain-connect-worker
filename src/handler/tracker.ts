@@ -9,13 +9,13 @@ const FAILED_ERROR = 'failed to register';
 export default class Tracker {
   static async start() {
     try {
-      // @TODO send worker info + service status
+      // @TODO send cluster info + container status
       const registerResult = await axios.post(`https://${constants.SERVER_ADDR}/register`, {});
       if (registerResult.data!.result !== 0) {
         throw FAILED_ERROR;
       }
       setTimeout(async () => {
-        // @TODO send servive status
+        // @TODO send container status
         await axios.post(`https://${constants.SERVER_ADDR}/ping`, {});
       });
     } catch (error) {
