@@ -32,7 +32,7 @@ export default class Manager {
       }
       const listener = firebase.database().ref(`worker_list/${uid}/request_queue`);
       listener.on('child_added', this.createEvent(uid));
-      this.checkSerices(uid);
+      this.checkServices(uid);
       log.info(`[+] start to listen on Manager DB [uid: ${uid}]`);
     });
   }
@@ -79,7 +79,7 @@ export default class Manager {
     }
   }
 
-  private checkSerices(uid: string) {
+  private checkServices(uid: string) {
     setInterval(async () => {
       const service = Service.getInstance();
       const terminateServices = service.getTerminateServices();
