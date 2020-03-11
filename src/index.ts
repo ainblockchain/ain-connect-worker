@@ -6,6 +6,7 @@ import Manager from './handler/manager';
 program.version(constants.VERSION);
 
 program.command('start').action(() => {
+  // @TODO check env
   Manager.getInstance().start();
   // Tracker.start();
 });
