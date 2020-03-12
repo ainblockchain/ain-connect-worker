@@ -7,8 +7,8 @@ const HDKey = require('hdkey');
 const envDev = (process.env.NODE_ENV === 'prod') ? {
   // prod
   VERSION: '1.0.0',
-  SERVER_ADDR: 'staging.server.ainetwork.ai',
-  INSTANCE_IMAGE: 'ainblockchain/ain-connect-shell-staging:latest',
+  SERVER_ADDR: 'server.ainetwork.ai',
+  INSTANCE_IMAGE: 'ainblockchain/ain-connect-shell:latest',
   apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
   authDomain: 'ain-v1-manager-staging.firebaseapp.com',
   databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
