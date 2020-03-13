@@ -54,7 +54,6 @@ const encryptionHelper: EncryptionHelper = (() => {
         default: Buffer.from([]),
       });
     });
-    console.log(fields);
     const signature = ainUtil.ecSignMessage(
       ainUtil.serialize(payload, fields), ainUtil.toBuffer(secretKey),
     );

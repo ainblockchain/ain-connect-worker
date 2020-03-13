@@ -13,11 +13,11 @@ export default class Tracker {
     try {
       const clusterInfo = {
         address: constants.CLUSTER_ADDR,
-        ClusterName: constants.CLUSTER_NAME,
+        clusterName: constants.CLUSTER_NAME,
         description: constants.DESCRIPTION,
         priceBySec: constants.PRICE,
       };
-
+      const ready = await Container.getInstance().getReadyInfo();
       const clusterSpec = {
         cpu: constants.CPU,
         gpu: constants.GPU,
@@ -27,7 +27,8 @@ export default class Tracker {
       };
       const registerParams = encryptionHelper.signatureMessage(
         {
-          clusterKey: constants.CLUSTER_ADDR,
+          ready: Number(ready),
+          clusterKey: constants.CLUSTER_KEY,
           version: constants.VERSION,
           clusterSpec: JSON.stringify(clusterSpec),
           clusterInfo: JSON.stringify(clusterInfo),
@@ -35,17 +36,17 @@ export default class Tracker {
         constants.CLUSTER_ADDR, constants.SECRET_KEY,
       );
       const registerResult = await this.rpcManager.call('ain_registerCluster', registerParams);
-      if (registerResult.data.result !== 0) {
-        throw JSON.stringify(registerResult.data.error);
+      if (!registerResult.data.result.success) {
+        throw JSON.stringify(registerResult.data);
       }
-      setTimeout(async () => {
-        const ready = await Container.getInstance().getReadyInfo();
+      setInterval(async () => {
+        const healthReedy = await Container.getInstance().getReadyInfo();
         const healthParams = encryptionHelper.signatureMessage(
-          { clusterKey: constants.CLUSTER_ADDR, ready },
+          { clusterKey: constants.CLUSTER_KEY, ready: Number(healthReedy) },
           constants.CLUSTER_ADDR, constants.SECRET_KEY,
         );
         await this.rpcManager.call('ain_healthCheck', healthParams);
-      });
+      }, constants.TRACKER_HEALTH_MS);
     } catch (error) {
       log.error(`[-] ${error}`);
     }

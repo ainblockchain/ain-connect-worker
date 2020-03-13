@@ -82,3 +82,8 @@ export const ERROR_MESSAGE = {
   520: 'failed to extend',
   530: 'invalid parameter',
 };
+
+
+// Tracker
+
+export const TRACKER_HEALTH_MS = 10000;
