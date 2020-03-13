@@ -35,7 +35,6 @@ const envDev = (process.env.NODE_ENV === 'prod') ? {
 export const {
   VERSION,
   SERVER_ADDR,
-  INSTANCE_IMAGE,
   apiKey,
   authDomain,
   databaseURL,
@@ -45,7 +44,6 @@ export const {
   appId,
   measurementId,
 } = envDev;
-
 export const firebaseConfig = {
   apiKey,
   authDomain,
@@ -62,9 +60,15 @@ export const {
   CLUSTER_NAME,
   DESCRIPTION,
   MNEMONIC,
+  IMAGE,
+  GPU,
+  CPU,
+  MEMORY,
+  STORAGE,
 } = process.env;
 export const PRICE = Number(process.env.PRICE) / 3600;
 export const MAX_CONTAINER_COUNT = Number(process.env.MAX_CONTAINER_COUNT) || 5;
+export const INSTANCE_IMAGE = IMAGE;
 
 const key = HDKey.fromMasterSeed(mnemonicToSeedSync(MNEMONIC!));
 const mainWallet = key.derive("m/44'/412'/0'/0/0"); /* default wallet address for AIN */
