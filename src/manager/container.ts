@@ -89,6 +89,16 @@ export default class Container {
     return Object.keys(this.containerDict).length;
   }
 
+  async getReadyInfo() {
+    this.containerInfoRelease = await mutex.acquire();
+    try {
+      const containerCount = Object.keys(this.containerDict).length;
+      return containerCount < constants.MAX_CONTAINER_COUNT;
+    } finally {
+      this.containerInfoRelease();
+    }
+  }
+
   getTerminateContainers(): string[] {
     const currentTime = Date.now() / 1000;
     const terminateContainers: string[] = [];

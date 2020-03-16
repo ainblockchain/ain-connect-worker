@@ -22,7 +22,7 @@ export default class Manager {
 
   start() {
     firebase.initializeApp(constants.firebaseConfig);
-    const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_ADDR}/request_queue`);
+    const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
     listener.onSnapshot(this.createEvent);
     this.checkContainers();
     log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
@@ -51,7 +51,7 @@ export default class Manager {
           }
 
           const resMassage = encryptionHelper.signatureMessage(
-            { clusterKey: constants.CLUSTER_ADDR, requestId, success: '0' },
+            { clusterKey: constants.CLUSTER_KEY, requestId, success: '0' },
             constants.CLUSTER_ADDR, constants.SECRET_KEY,
           );
           await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
@@ -60,7 +60,7 @@ export default class Manager {
           const errCode = (constants.ERROR_MESSAGE[error]) ? error : 500;
           const resMassage = encryptionHelper.signatureMessage(
             {
-              clusterKey: constants.CLUSTER_ADDR,
+              clusterKey: constants.CLUSTER_KEY,
               requestId,
               errCode,
               errMessage: constants.ERROR_MESSAGE[errCode],
