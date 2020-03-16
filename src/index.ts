@@ -5,10 +5,9 @@ import Tracker from './handler/tracker';
 
 program.version(constants.VERSION);
 
-program.command('start').action(() => {
-  // @TODO check env
-  Manager.getInstance().start();
-  Tracker.start();
+program.command('start').action(async () => {
+  await Manager.getInstance().start();
+  await Tracker.start();
 });
 
 program.parse(process.argv);

@@ -3,6 +3,7 @@ import * as constants from '../common/constants';
 import Logger from '../common/logger';
 import Container from '../manager/container';
 import encryptionHelper from '../util/encryption';
+import k8s from '../util/k8s';
 import 'firebase/firestore';
 import 'firebase/auth';
 import 'firebase/functions';
@@ -20,7 +21,13 @@ export default class Manager {
     return Manager.instance;
   }
 
-  start() {
+  async start() {
+    const result = await k8s.init();
+    if (!result) {
+      log.error('[-] falied to init kubernetes ');
+      process.exit(1);
+    }
+    log.info('[+] succeeded to init kubernetes');
     firebase.initializeApp(constants.firebaseConfig);
     const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
     listener.onSnapshot(this.createEvent);
@@ -37,7 +44,7 @@ export default class Manager {
         const {
           containerId, address, price, reserveAmount, type,
         } = params;
-        log.debug(`[+] requested <type: ${type}, address: ${address}>`);
+        log.debug(`[+] requested <type: ${type}, address: ${address} requestId: ${requestId}>`);
         const container = Container.getInstance();
         try {
           if (type === 'ADD') {

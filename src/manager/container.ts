@@ -1,5 +1,5 @@
 import { Mutex, MutexInterface } from 'async-mutex';
-// import k8s from '../util/k8s';
+import k8s from '../util/k8s';
 import * as constants from '../common/constants';
 
 
@@ -30,8 +30,9 @@ export default class Container {
     this.containerInfoRelease = await mutex.acquire();
     try {
       if (this.containerDict[containerId]) return 500;
-      const containerCount = Object.keys(this.containerDict).length;
-      if (containerCount > constants.MAX_CONTAINER_COUNT) return 500;
+      const ready = await this.getReadyInfo();
+
+      if (!ready) return 500;
       this.containerDict[containerId] = {
         terminateTime: Date.now() / 1000 + (reserveAmount / price),
       };
@@ -40,11 +41,14 @@ export default class Container {
     }
 
     try {
-      // const result = await k8s.create(containerId);
+      const result = await k8s.create(containerId);
+      if (!result) {
+        throw new Error('500');
+      }
       return 0;
     } catch (error) {
       await this.terminate(containerId);
-      return (constants.ERROR_MESSAGE[error]) ? error : 500;
+      throw (constants.ERROR_MESSAGE[error]) ? error : '600';
     }
   }
 
@@ -59,7 +63,7 @@ export default class Container {
     }
 
     try {
-      // await k8s.delete(containerId);
+      await k8s.delete(containerId);
       return 0;
     } catch (error) {
       return (constants.ERROR_MESSAGE[error]) ? error : 500;
@@ -90,13 +94,9 @@ export default class Container {
   }
 
   async getReadyInfo() {
-    this.containerInfoRelease = await mutex.acquire();
-    try {
-      const containerCount = Object.keys(this.containerDict).length;
-      return containerCount < constants.MAX_CONTAINER_COUNT;
-    } finally {
-      this.containerInfoRelease();
-    }
+    const containerCount = Object.keys(this.containerDict).length;
+    const result = await k8s.getReadyForCreate();
+    return (containerCount < constants.MAX_CONTAINER_COUNT && result);
   }
 
   getTerminateContainers(): string[] {
