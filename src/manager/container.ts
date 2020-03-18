@@ -10,7 +10,7 @@ export default class Container {
 
   private containerInfoRelease: MutexInterface.Releaser;
 
-  private containerDict: {[containerId: string]: {terminateTime: number}};
+  private containerDict: {[containerId: string]: {address: string, terminateTime: number}};
 
 
   static getInstance(): Container {
@@ -24,7 +24,7 @@ export default class Container {
     this.containerDict = {};
   }
 
-  async start(containerId: string, publicKey: string,
+  async start(containerId: string, address: string,
     price: number, reserveAmount: number): Promise<number> {
     // mutex
     this.containerInfoRelease = await mutex.acquire();
@@ -34,6 +34,7 @@ export default class Container {
 
       if (!ready) return 500;
       this.containerDict[containerId] = {
+        address,
         terminateTime: Date.now() / 1000 + (reserveAmount / price),
       };
     } finally {
@@ -99,12 +100,12 @@ export default class Container {
     return (containerCount < constants.MAX_CONTAINER_COUNT && result);
   }
 
-  getTerminateContainers(): string[] {
+  getTerminateContainers(): {containerId: string, address: string}[] {
     const currentTime = Date.now() / 1000;
-    const terminateContainers: string[] = [];
+    const terminateContainers: {containerId: string, address: string}[] = [];
     Object.keys(this.containerDict).forEach((containerId: string) => {
       if (this.containerDict[containerId].terminateTime <= currentTime) {
-        terminateContainers.push(containerId);
+        terminateContainers.push({containerId, address: this.containerDict[containerId].address });
       }
     });
     return terminateContainers;
