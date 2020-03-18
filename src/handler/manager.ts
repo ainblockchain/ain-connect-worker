@@ -22,17 +22,20 @@ export default class Manager {
   }
 
   async start() {
-    const result = await k8s.init();
-    if (!result) {
-      log.error('[-] falied to init kubernetes ');
-      process.exit(1);
+    try {
+      const result = await k8s.init();
+      if (!result) {
+        throw new Error('falied to init kubernetes');
+      }
+      log.info('[+] succeeded to init kubernetes');
+      firebase.initializeApp(constants.firebaseConfig);
+      const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
+      listener.onSnapshot(this.createEvent);
+      this.checkContainers();
+      log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
+    } catch (error) {
+      throw new Error(`<manager> ${error}`);
     }
-    log.info('[+] succeeded to init kubernetes');
-    firebase.initializeApp(constants.firebaseConfig);
-    const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
-    listener.onSnapshot(this.createEvent);
-    this.checkContainers();
-    log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
   }
 
   public createEvent = async (
@@ -85,14 +88,14 @@ export default class Manager {
     setInterval(async () => {
       const container = Container.getInstance();
       const terminateContainers = container.getTerminateContainers();
-      terminateContainers.forEach(async (containerId: string) => {
-        log.debug(`[+] terminate <containerId: ${containerId}>`);
-        await container.terminate(containerId);
+      terminateContainers.forEach(async (containerInfo) => {
+        log.debug(`[+] terminate <containerId: ${containerInfo.containerId}>`);
+        await container.terminate(containerInfo.containerId);
         const resMassage = encryptionHelper.signatureMessage(
-          { clusterKey: constants.CLUSTER_ADDR, requestId: 'requestId', success: 0 },
+          { address: containerInfo.address, containerId: containerInfo.containerId },
           constants.CLUSTER_ADDR, constants.SECRET_KEY,
         );
-        await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
+        await firebase.functions().httpsCallable('expireContainer')(resMassage);
       });
     }, 1000);
   }
