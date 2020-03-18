@@ -105,7 +105,7 @@ export default class Container {
     const terminateContainers: {containerId: string, address: string}[] = [];
     Object.keys(this.containerDict).forEach((containerId: string) => {
       if (this.containerDict[containerId].terminateTime <= currentTime) {
-        terminateContainers.push({containerId, address: this.containerDict[containerId].address });
+        terminateContainers.push({ containerId, address: this.containerDict[containerId].address });
       }
     });
     return terminateContainers;

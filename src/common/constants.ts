@@ -95,8 +95,8 @@ export const TRACKER_HEALTH_MS = 5000;
 export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
 
 export const checkConstants = async () => {
-  const clusterRole = /^[a-zA-Z0-9-]*$/;
-  const result = (CLUSTER_NAME && clusterRole.test(CLUSTER_NAME) && 2 < CLUSTER_NAME.length && CLUSTER_NAME.length < 63)
+  const clusterNamingRule = /^[a-zA-Z0-9-]*$/;
+  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME) && 2 < CLUSTER_NAME.length && CLUSTER_NAME.length < 63)
     && (MNEMONIC && IMAGE && DESCRIPTION)
     && (STORAGE_LIMIT_Gi && Number(STORAGE_LIMIT_Gi) !== NaN)
     && (PRICE && Number(PRICE) !== NaN);

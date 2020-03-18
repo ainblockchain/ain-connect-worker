@@ -12,6 +12,7 @@ module.exports = {
     "@typescript-eslint"
   ],
   "rules": {
+    "camelcase": 0,
     "no-restricted-syntax": 0,
     "import/no-extraneous-dependencies": 0,
     "no-await-in-loop": 0,
