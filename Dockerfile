@@ -19,13 +19,13 @@ RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/a
 RUN apt-get update
 RUN apt-get install -y kubectl
 ENV PATH $PWD/bin:$PATH
+RUN mkdir /root/.kube
+# copy ain-connect-cluster code.
+RUN mkdir /ain-connect-cluster
+ADD package.json /ain-connect-cluster
+ADD ./ /ain-connect-cluster
 
-# copy ain-v1-worker code.
-RUN mkdir /ain-connect-worker
-ADD package.json /ain-connect-worker
-ADD ./ /ain-connect-worker
-
-WORKDIR /ain-connect-worker
+WORKDIR /ain-connect-cluster
 RUN yarn
 
 CMD ["yarn", "start"]

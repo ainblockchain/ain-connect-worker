@@ -22,17 +22,20 @@ export default class Manager {
   }
 
   async start() {
-    const result = await k8s.init();
-    if (!result) {
-      log.error('[-] falied to init kubernetes ');
-      process.exit(1);
+    try {
+      const result = await k8s.init();
+      if (!result) {
+        throw new Error('falied to init kubernetes');
+      }
+      log.info('[+] succeeded to init kubernetes');
+      firebase.initializeApp(constants.firebaseConfig);
+      const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
+      listener.onSnapshot(this.createEvent);
+      this.checkContainers();
+      log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
+    } catch (error) {
+      throw new Error(`<manager> ${error}`);
     }
-    log.info('[+] succeeded to init kubernetes');
-    firebase.initializeApp(constants.firebaseConfig);
-    const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
-    listener.onSnapshot(this.createEvent);
-    this.checkContainers();
-    log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
   }
 
   public createEvent = async (

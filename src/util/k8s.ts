@@ -49,8 +49,8 @@ export default class k8s {
     try {
       const resourceIndo = await k8s.availableResource();
       for (const name of Object.keys(resourceIndo)) {
-        if (resourceIndo[name].cpu > parseInt(constants.CPU_LIMIT!, 10)
-          && resourceIndo[name].memory > parseInt(constants.MEMORY_LIMIT!, 10)
+        if (resourceIndo[name].cpu > parseInt(constants.CPU_LIMIT_m!, 10)
+          && resourceIndo[name].memory > parseInt(constants.MEMORY_LIMIT_Mi!, 10)
           && (!constants.GPU_LIMIT
              || resourceIndo[name].gpu >= parseInt(constants.GPU_LIMIT!, 10))) {
           return true;
@@ -119,12 +119,12 @@ export default class k8s {
       const yaml = data.replace(/CONTAINER_ID/g, containerId).replace(/IMAGE/g, constants.IMAGE!)
         .replace(/DOMAIN/g, constants.DOMAIN.replace('*', containerId));
       const yamlJsons = safeLoadAll(yaml);
-      yamlJsons[0].spec.resources.requests.storage = constants.STORAGE_LIMIT;
+      yamlJsons[0].spec.resources.requests.storage = constants.STORAGE_LIMIT_Gi;
       yamlJsons[1].spec.template.spec.containers.resources = {
         limits: {
           'nvidia.com/gpu': constants.GPU_LIMIT,
-          memory: constants.MEMORY_LIMIT,
-          cpu: constants.CPU_LIMIT,
+          memory: constants.MEMORY_LIMIT_Mi,
+          cpu: constants.CPU_LIMIT_m,
         },
       };
       // PersistentVolumeClaim

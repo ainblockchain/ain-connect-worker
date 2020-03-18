@@ -62,9 +62,9 @@ export const {
   MNEMONIC,
   IMAGE,
   GPU_LIMIT,
-  CPU_LIMIT,
-  MEMORY_LIMIT,
-  STORAGE_LIMIT,
+  CPU_LIMIT_m,
+  MEMORY_LIMIT_Mi,
+  STORAGE_LIMIT_Gi,
 } = process.env;
 export const PRICE = Number(process.env.PRICE) / 3600;
 export const MAX_CONTAINER_COUNT = Number(process.env.MAX_CONTAINER_COUNT) || 5;
@@ -94,6 +94,14 @@ export const TRACKER_HEALTH_MS = 5000;
 
 export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
 
-// const checkConstants = () {
+export const checkConstants = async () => {
+  const clusterRole = /^[a-zA-Z0-9-]*$/;
+  const result = (CLUSTER_NAME && clusterRole.test(CLUSTER_NAME) && 2 < CLUSTER_NAME.length && CLUSTER_NAME.length < 63)
+    && (MNEMONIC && IMAGE && DESCRIPTION)
+    && (STORAGE_LIMIT_Gi && Number(STORAGE_LIMIT_Gi) !== NaN)
+    && (PRICE && Number(PRICE) !== NaN);
 
-// }
+  if (!result) {
+    throw Error('<constants> invalid constants');
+  }
+}
