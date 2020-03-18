@@ -19,10 +19,10 @@ export default class Tracker {
       };
       const ready = await Container.getInstance().getReadyInfo();
       const clusterSpec = {
-        cpu: constants.CPU,
-        gpu: constants.GPU,
-        memory: constants.MEMORY,
-        storage: constants.STORAGE,
+        cpu: constants.CPU_LIMIT,
+        gpu: constants.GPU_LIMIT || '0',
+        memory: constants.MEMORY_LIMIT,
+        storage: constants.STORAGE_LIMIT,
         image: constants.IMAGE,
       };
       const registerParams = encryptionHelper.signatureMessage(

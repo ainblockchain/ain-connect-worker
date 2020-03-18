@@ -8,7 +8,7 @@ const envDev = (process.env.NODE_ENV === 'prod') ? {
   // prod
   VERSION: '1.0.0',
   SERVER_ADDR: 'server.ainetwork.ai',
-  INSTANCE_IMAGE: 'ainblockchain/ain-connect-shell:latest',
+  CONTAINER_IMAGE: 'ainblockchain/ain-connect-shell:latest',
   apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
   authDomain: 'ain-v1-manager-staging.firebaseapp.com',
   databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
@@ -21,7 +21,7 @@ const envDev = (process.env.NODE_ENV === 'prod') ? {
   // staging
   VERSION: '1.0.0',
   SERVER_ADDR: 'staging.server.ainetwork.ai',
-  INSTANCE_IMAGE: 'ainblockchain/ain-connect-shell-staging:latest',
+  CONTAINER_IMAGE: 'ainblockchain/ain-connect-shell-staging:latest',
   apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
   authDomain: 'ain-v1-manager-staging.firebaseapp.com',
   databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
@@ -61,14 +61,14 @@ export const {
   DESCRIPTION,
   MNEMONIC,
   IMAGE,
-  GPU,
-  CPU,
-  MEMORY,
-  STORAGE,
+  GPU_LIMIT,
+  CPU_LIMIT,
+  MEMORY_LIMIT,
+  STORAGE_LIMIT,
 } = process.env;
 export const PRICE = Number(process.env.PRICE) / 3600;
 export const MAX_CONTAINER_COUNT = Number(process.env.MAX_CONTAINER_COUNT) || 5;
-export const INSTANCE_IMAGE = IMAGE;
+export const CONTAINER_IMAGE = IMAGE;
 
 const key = HDKey.fromMasterSeed(mnemonicToSeedSync(MNEMONIC!));
 const mainWallet = key.derive("m/44'/412'/0'/0/0"); /* default wallet address for AIN */
@@ -81,9 +81,19 @@ export const ERROR_MESSAGE = {
   510: 'failed to terminate',
   520: 'failed to extend',
   530: 'invalid parameter',
+  600: 'Unexpected Error',
 };
 
 
 // Tracker
 
-export const TRACKER_HEALTH_MS = 10000;
+export const TRACKER_HEALTH_MS = 5000;
+
+
+// temp
+
+export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
+
+// const checkConstants = () {
+
+// }
