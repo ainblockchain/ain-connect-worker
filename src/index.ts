@@ -15,10 +15,9 @@ program.command('start').action(async () => {
     await Manager.getInstance().start();
     await Tracker.start();
   } catch (error) {
-    log.error(`[-] ${error}`)
+    log.error(`[-] ${error}`);
     process.exit(1);
   }
-
 });
 
 program.parse(process.argv);

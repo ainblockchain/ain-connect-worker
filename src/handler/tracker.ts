@@ -18,7 +18,7 @@ export default class Tracker {
       log.info('[+] start to connect on Tracker');
       return true;
     } catch (error) {
-      throw new Error(`<tracker> ${error}`)
+      throw new Error(`<tracker> ${error}`);
     }
   }
 
@@ -35,10 +35,10 @@ export default class Tracker {
         throw new Error('not ready');
       }
       const clusterSpec = {
-        cpu: constants.CPU_LIMIT_m + 'm',
+        cpu: `${constants.CPU_LIMIT_m}m`,
         gpu: constants.GPU_LIMIT || '0',
-        memory: constants.MEMORY_LIMIT_Mi + 'Mi',
-        storage: constants.STORAGE_LIMIT_Gi + 'Gi',
+        memory: `${constants.MEMORY_LIMIT_Mi}Mi`,
+        storage: `${constants.STORAGE_LIMIT_Gi}Gi`,
         image: constants.IMAGE,
       };
       const registerParams = encryptionHelper.signatureMessage(
@@ -76,5 +76,4 @@ export default class Tracker {
     );
     await this.rpcManager.call('ain_unregisterCluster', params);
   }
-  
 }

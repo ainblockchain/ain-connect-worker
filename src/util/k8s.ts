@@ -9,7 +9,7 @@ const exec = util.promisify(require('child_process').exec);
 
 const log = Logger.createLogger('util.k8s');
 const HEALTH_CHECK_MS = 2000;
-const CHECK_COUNT = 55;
+const CHECK_COUNT = 85;
 const YAML_PATH = './kube_yaml';
 
 const delay = async (ms: number) => {
@@ -18,45 +18,10 @@ const delay = async (ms: number) => {
 };
 
 export default class k8s {
-  static async availableResource() {
-    const resourceIndo = {};
-    const topNodeResult = await exec('kubectl top node');
-    const rows = topNodeResult.stdout.split('\n').splice(1).filter((e: string) => e !== '');
-    rows.forEach((nodeInfo: string) => {
-      const nodeInfoList = nodeInfo.split(' ').filter((e: string) => e !== '');
-      const cpu = (100 - parseInt(nodeInfoList[2], 10))
-        * (parseInt(nodeInfoList[1], 10) / (parseInt(nodeInfoList[2], 10)));
-      const memory = (100 - parseInt(nodeInfoList[4], 10))
-        * (parseInt(nodeInfoList[3], 10) / (parseInt(nodeInfoList[4], 10)));
-      resourceIndo[nodeInfoList[0]] = {
-        cpu,
-        memory,
-      };
-    });
-
-    if (constants.GPU_LIMIT) {
-      const gpuResult = await exec('kubectl get nodes -o=custom-columns=NAME:.metadata.name,GPU:.status.allocatable.nvidia\\.com/gpu');
-      const gpuRows = gpuResult.stdout.split('\n').splice(1).filter((e: string) => e !== '');
-      gpuRows.forEach((nodeInfo: string) => {
-        const nodeInfoList = nodeInfo.split(' ').filter((e: string) => e !== '');
-        resourceIndo[nodeInfoList[0]].gpu = (nodeInfoList[1] !== '<none>') ? parseInt(nodeInfoList[1], 10) : 0;
-      });
-    }
-    return resourceIndo;
-  }
-
   static async getReadyForCreate() {
     try {
-      const resourceIndo = await k8s.availableResource();
-      for (const name of Object.keys(resourceIndo)) {
-        if (resourceIndo[name].cpu > parseInt(constants.CPU_LIMIT_m!, 10)
-          && resourceIndo[name].memory > parseInt(constants.MEMORY_LIMIT_Mi!, 10)
-          && (!constants.GPU_LIMIT
-             || resourceIndo[name].gpu >= parseInt(constants.GPU_LIMIT!, 10))) {
-          return true;
-        }
-      }
-      return false;
+      // @Todo check Resource
+      return true;
     } catch (error) {
       log.error(`[-] failed to get ready for create ${error}`);
       return false;
@@ -72,7 +37,7 @@ export default class k8s {
 
   static async init() {
     try {
-      await exec('kubectl delete svc,gateway,pod,deploy,VirtualService,PersistentVolumeClaim --all');
+      await exec('kubectl delete svc,gateway,pod,deploy,VirtualService,PersistentVolumeClaim,PersistentVolume --all');
       const data = await util.promisify(fs.readFile)(`${YAML_PATH}/init_template.yaml`, 'utf8');
       const yaml = data.replace(/DOMAIN/g, `"${constants.DOMAIN}"`);
       await k8s.apply(`${YAML_PATH}/init.yaml`, yaml);
@@ -119,22 +84,22 @@ export default class k8s {
       const yaml = data.replace(/CONTAINER_ID/g, containerId).replace(/IMAGE/g, constants.IMAGE!)
         .replace(/DOMAIN/g, constants.DOMAIN.replace('*', containerId));
       const yamlJsons = safeLoadAll(yaml);
-      yamlJsons[0].spec.resources.requests.storage = constants.STORAGE_LIMIT_Gi;
-      yamlJsons[1].spec.template.spec.containers.resources = {
+      yamlJsons[0].spec.resources.requests.storage = `${constants.STORAGE_LIMIT_Gi}Gi`;
+      yamlJsons[1].spec.template.spec.containers[0].resources = {
         limits: {
-          'nvidia.com/gpu': constants.GPU_LIMIT,
-          memory: constants.MEMORY_LIMIT_Mi,
-          cpu: constants.CPU_LIMIT_m,
+          'nvidia.com/gpu': (constants.GPU_LIMIT) ? `${constants.GPU_LIMIT}` : constants.GPU_LIMIT,
+          memory: `${constants.MEMORY_LIMIT_Mi}Mi`,
+          cpu: `${constants.CPU_LIMIT_m}m`,
+        },
+        requests: {
+          'nvidia.com/gpu': (constants.GPU_LIMIT) ? `${constants.GPU_LIMIT}` : constants.GPU_LIMIT,
+          memory: `${constants.MEMORY_LIMIT_Mi}Mi`,
+          cpu: `${constants.CPU_LIMIT_m}m`,
         },
       };
-      // PersistentVolumeClaim
-      await k8s.apply(`${YAML_PATH}/${containerId}.yaml`, safeDump(JSON.parse(JSON.stringify(yamlJsons[0]))));
-      // Deployment
-      await k8s.apply(`${YAML_PATH}/${containerId}.yaml`, safeDump(JSON.parse(JSON.stringify(yamlJsons[1]))));
-      // Service
-      await k8s.apply(`${YAML_PATH}/${containerId}.yaml`, safeDump(JSON.parse(JSON.stringify(yamlJsons[2]))));
-      // VirtualService
-      await k8s.apply(`${YAML_PATH}/${containerId}.yaml`, safeDump(JSON.parse(JSON.stringify(yamlJsons[3]))));
+      for (const yamlJson of yamlJsons) {
+        await k8s.apply(`${YAML_PATH}/${containerId}.yaml`, safeDump(JSON.parse(JSON.stringify(yamlJson))));
+      }
 
       // check
       for (let i = 0; i < CHECK_COUNT; i += 1) {
@@ -144,7 +109,7 @@ export default class k8s {
       }
       return exist;
     } catch (e) {
-      // await exec(`rm -rf ${YAML_PATH}/${containerId}.yaml`);
+      await exec(`rm -rf ${YAML_PATH}/${containerId}.yaml`);
       log.error(`[-] failed to create pod - ${e}`);
       return false;
     }

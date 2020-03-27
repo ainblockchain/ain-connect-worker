@@ -47,7 +47,7 @@ export default class Manager {
         const {
           containerId, address, price, reserveAmount, type,
         } = params;
-        log.debug(`[+] requested <type: ${type}, address: ${address} requestId: ${requestId}>`);
+        log.debug(`[+] requested <type: ${type}, address: ${address} requestId: ${requestId} containerId: ${containerId}>`);
         const container = Container.getInstance();
         try {
           if (type === 'ADD') {
@@ -77,7 +77,11 @@ export default class Manager {
             },
             constants.CLUSTER_ADDR, constants.SECRET_KEY,
           );
-          await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
+          try {
+            await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
+          } catch (e) {
+            log.error(`[-] failed to call functions - ${e}`);
+          }
           log.debug(`[+] failed to ${type} <publicKey: ${address}> - ${error}`);
         }
       }

@@ -96,12 +96,13 @@ export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
 
 export const checkConstants = async () => {
   const clusterNamingRule = /^[a-zA-Z0-9-]*$/;
-  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME) && 2 < CLUSTER_NAME.length && CLUSTER_NAME.length < 63)
+  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME)
+    && CLUSTER_NAME.length > 2 && CLUSTER_NAME.length < 63)
     && (MNEMONIC && IMAGE && DESCRIPTION)
-    && (STORAGE_LIMIT_Gi && Number(STORAGE_LIMIT_Gi) !== NaN)
-    && (PRICE && Number(PRICE) !== NaN);
+    && (STORAGE_LIMIT_Gi && !Number.isNaN(Number(STORAGE_LIMIT_Gi)))
+    && (PRICE && !Number.isNaN(Number(PRICE)));
 
   if (!result) {
     throw Error('<constants> invalid constants');
   }
-}
+};
