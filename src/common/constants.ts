@@ -3,12 +3,10 @@ import { mnemonicToSeedSync } from 'bip39';
 
 const HDKey = require('hdkey');
 
-
 const envDev = (process.env.NODE_ENV === 'prod') ? {
   // prod
   VERSION: '1.0.0',
   SERVER_ADDR: 'server.ainetwork.ai',
-  CONTAINER_IMAGE: 'ainblockchain/ain-connect-shell:latest',
   apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
   authDomain: 'ain-v1-manager-staging.firebaseapp.com',
   databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
@@ -21,7 +19,6 @@ const envDev = (process.env.NODE_ENV === 'prod') ? {
   // staging
   VERSION: '1.0.0',
   SERVER_ADDR: 'staging.server.ainetwork.ai',
-  CONTAINER_IMAGE: 'ainblockchain/ain-connect-shell-staging:latest',
   apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
   authDomain: 'ain-v1-manager-staging.firebaseapp.com',
   databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
@@ -44,6 +41,7 @@ export const {
   appId,
   measurementId,
 } = envDev;
+
 export const firebaseConfig = {
   apiKey,
   authDomain,
@@ -81,27 +79,28 @@ export const ERROR_MESSAGE = {
   510: 'failed to terminate',
   520: 'failed to extend',
   530: 'invalid parameter',
+  540: 'not ready',
+  550: 'already exists',
   600: 'Unexpected Error',
 };
 
 
 // Tracker
-
 export const TRACKER_HEALTH_MS = 5000;
 
 
 // temp
-
 export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
 
 export const checkConstants = async () => {
   const clusterNamingRule = /^[a-zA-Z0-9-]*$/;
-  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME) && 2 < CLUSTER_NAME.length && CLUSTER_NAME.length < 63)
+  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME)
+    && CLUSTER_NAME.length > 2 && CLUSTER_NAME.length < 63)
     && (MNEMONIC && IMAGE && DESCRIPTION)
-    && (STORAGE_LIMIT_Gi && Number(STORAGE_LIMIT_Gi) !== NaN)
-    && (PRICE && Number(PRICE) !== NaN);
+    && (STORAGE_LIMIT_Gi && !Number.isNaN(Number(STORAGE_LIMIT_Gi)))
+    && (PRICE && !Number.isNaN(Number(PRICE)));
 
   if (!result) {
     throw Error('<constants> invalid constants');
   }
-}
+};

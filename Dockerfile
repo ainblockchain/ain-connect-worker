@@ -1,16 +1,19 @@
-FROM ubuntu:18.04
+FROM node:10.0.0-alpine AS build
+
+# copy server code.
+RUN mkdir /server
+WORKDIR /server
+ADD package.json /server
+ADD ./tsconfig.json /server/tsconfig.json
+RUN npm install 
+RUN npm install -g typescript
+ADD ./src /server/src
+RUN tsc
+
+FROM node:10.0.0-slim
 
 RUN apt-get update
-# install nodeJS and npm.
-RUN apt-get install -y \
-        nodejs \
-        curl \
-        npm
-
-# install yarn
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-    && apt-get update && apt-get install -y yarn
+RUN apt-get install -y curl
 
 # install kubectl
 RUN apt-get update && apt-get install -y apt-transport-https
@@ -20,12 +23,12 @@ RUN apt-get update
 RUN apt-get install -y kubectl
 ENV PATH $PWD/bin:$PATH
 RUN mkdir /root/.kube
-# copy ain-connect-cluster code.
-RUN mkdir /ain-connect-cluster
-ADD package.json /ain-connect-cluster
-ADD ./ /ain-connect-cluster
 
-WORKDIR /ain-connect-cluster
-RUN yarn
+RUN mkdir /server
+ADD package.json /server
+ADD ./kube_yaml /server/kube_yaml
+COPY --from=build /server/dist /server/dist
+WORKDIR /server
+RUN npm install --only=prod
 
-CMD ["yarn", "start"]
+CMD ["node", "dist/index.js", "serve"]

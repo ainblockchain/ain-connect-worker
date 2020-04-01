@@ -7,18 +7,22 @@ import Container from '../manager/container';
 const log = Logger.createLogger('handler.tracker');
 
 export default class Tracker {
-  private static rpcManager: ClientJsonRpc = new ClientJsonRpc(`https://${constants.SERVER_ADDR}/tracker`);
+  private static rpcManager: ClientJsonRpc = new ClientJsonRpc(`https://${constants.SERVER_ADDR}`);
 
   static async start() {
     try {
       await Tracker.register();
       setInterval(async () => {
-        await Tracker.healthCheck();
+        try {
+          await Tracker.healthCheck();
+        } catch (error) {
+          log.error(`[-] failed to send health message - ${error}`);
+        }
       }, constants.TRACKER_HEALTH_MS);
       log.info('[+] start to connect on Tracker');
       return true;
     } catch (error) {
-      throw new Error(`<tracker> ${error}`)
+      throw new Error(`<tracker> ${error}`);
     }
   }
 
@@ -35,10 +39,10 @@ export default class Tracker {
         throw new Error('not ready');
       }
       const clusterSpec = {
-        cpu: constants.CPU_LIMIT_m + 'm',
+        cpu: `${constants.CPU_LIMIT_m}m`,
         gpu: constants.GPU_LIMIT || '0',
-        memory: constants.MEMORY_LIMIT_Mi + 'Mi',
-        storage: constants.STORAGE_LIMIT_Gi + 'Gi',
+        memory: `${constants.MEMORY_LIMIT_Mi}Mi`,
+        storage: `${constants.STORAGE_LIMIT_Gi}Gi`,
         image: constants.IMAGE,
       };
       const registerParams = encryptionHelper.signatureMessage(
@@ -76,5 +80,4 @@ export default class Tracker {
     );
     await this.rpcManager.call('ain_unregisterCluster', params);
   }
-  
 }
