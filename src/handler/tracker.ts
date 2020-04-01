@@ -7,13 +7,17 @@ import Container from '../manager/container';
 const log = Logger.createLogger('handler.tracker');
 
 export default class Tracker {
-  private static rpcManager: ClientJsonRpc = new ClientJsonRpc(`https://${constants.SERVER_ADDR}/tracker`);
+  private static rpcManager: ClientJsonRpc = new ClientJsonRpc(`https://${constants.SERVER_ADDR}`);
 
   static async start() {
     try {
       await Tracker.register();
       setInterval(async () => {
-        await Tracker.healthCheck();
+        try {
+          await Tracker.healthCheck();
+        } catch (error) {
+          log.error(`[-] failed to send health message - ${error}`);
+        }
       }, constants.TRACKER_HEALTH_MS);
       log.info('[+] start to connect on Tracker');
       return true;

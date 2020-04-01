@@ -65,7 +65,7 @@ export default class Manager {
             constants.CLUSTER_ADDR, constants.SECRET_KEY,
           );
           await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
-          log.debug(`[+] succeded to ${type} <publicKey: ${address}>`);
+          log.debug(`[+] succeeded to ${type} <publicKey: ${address}>`);
         } catch (error) {
           const errCode = (constants.ERROR_MESSAGE[error]) ? error : 500;
           const resMassage = encryptionHelper.signatureMessage(
@@ -92,7 +92,7 @@ export default class Manager {
     setInterval(async () => {
       const container = Container.getInstance();
       const terminateContainers = container.getTerminateContainers();
-      terminateContainers.forEach(async (containerInfo) => {
+      for (const containerInfo of terminateContainers) {
         log.debug(`[+] terminate <containerId: ${containerInfo.containerId}>`);
         await container.terminate(containerInfo.containerId);
         const resMassage = encryptionHelper.signatureMessage(
@@ -100,7 +100,8 @@ export default class Manager {
           constants.CLUSTER_ADDR, constants.SECRET_KEY,
         );
         await firebase.functions().httpsCallable('expireContainer')(resMassage);
-      });
+        log.debug(`[+] succeeded to terminate <containerId: ${containerInfo.containerId}>`);
+      }
     }, 1000);
   }
 }

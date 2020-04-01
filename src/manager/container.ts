@@ -29,13 +29,13 @@ export default class Container {
     // mutex
     this.containerInfoRelease = await mutex.acquire();
     try {
-      if (this.containerDict[containerId]) return 500;
+      if (this.containerDict[containerId]) throw new Error('550');
       const ready = await this.getReadyInfo();
 
-      if (!ready) return 500;
+      if (!ready) throw new Error('540');
       this.containerDict[containerId] = {
         address,
-        terminateTime: Date.now() / 1000 + (reserveAmount / price),
+        terminateTime: 0,
       };
     } finally {
       this.containerInfoRelease();
@@ -46,6 +46,7 @@ export default class Container {
       if (!result) {
         throw new Error('500');
       }
+      this.containerDict[containerId].terminateTime = Date.now() / 1000 + (reserveAmount / price);
       return 0;
     } catch (error) {
       await this.terminate(containerId);
@@ -104,9 +105,13 @@ export default class Container {
     const currentTime = Date.now() / 1000;
     const terminateContainers: {containerId: string, address: string}[] = [];
     Object.keys(this.containerDict).forEach((containerId: string) => {
-      if (this.containerDict[containerId].terminateTime <= currentTime) {
+      if (this.containerDict[containerId].terminateTime !== 0
+        && this.containerDict[containerId].terminateTime <= currentTime) {
         terminateContainers.push({ containerId, address: this.containerDict[containerId].address });
       }
+    });
+    terminateContainers.forEach((containerInfo: {containerId: string, address: string}) => {
+      delete this.containerDict[containerInfo.containerId];
     });
     return terminateContainers;
   }

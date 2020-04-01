@@ -3,12 +3,10 @@ import { mnemonicToSeedSync } from 'bip39';
 
 const HDKey = require('hdkey');
 
-
 const envDev = (process.env.NODE_ENV === 'prod') ? {
   // prod
   VERSION: '1.0.0',
   SERVER_ADDR: 'server.ainetwork.ai',
-  CONTAINER_IMAGE: 'ainblockchain/ain-connect-shell:latest',
   apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
   authDomain: 'ain-v1-manager-staging.firebaseapp.com',
   databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
@@ -21,7 +19,6 @@ const envDev = (process.env.NODE_ENV === 'prod') ? {
   // staging
   VERSION: '1.0.0',
   SERVER_ADDR: 'staging.server.ainetwork.ai',
-  CONTAINER_IMAGE: 'ainblockchain/ain-connect-shell-staging:latest',
   apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
   authDomain: 'ain-v1-manager-staging.firebaseapp.com',
   databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
@@ -44,6 +41,7 @@ export const {
   appId,
   measurementId,
 } = envDev;
+
 export const firebaseConfig = {
   apiKey,
   authDomain,
@@ -81,17 +79,17 @@ export const ERROR_MESSAGE = {
   510: 'failed to terminate',
   520: 'failed to extend',
   530: 'invalid parameter',
+  540: 'not ready',
+  550: 'already exists',
   600: 'Unexpected Error',
 };
 
 
 // Tracker
-
 export const TRACKER_HEALTH_MS = 5000;
 
 
 // temp
-
 export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
 
 export const checkConstants = async () => {

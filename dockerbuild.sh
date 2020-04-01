@@ -7,5 +7,5 @@ elif [ $NODE_ENV = "staging" ]; then
 fi
 
 docker build -t ${dockerUrl}:$TAG .
-docker push ${dockerUrl}:$TAG
+# docker push ${dockerUrl}:$TAG
 
