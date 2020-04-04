@@ -7,14 +7,14 @@ const envDev = (process.env.NODE_ENV === 'prod') ? {
   // prod
   VERSION: '1.0.0',
   SERVER_ADDR: 'server.ainetwork.ai',
-  apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
-  authDomain: 'ain-v1-manager-staging.firebaseapp.com',
-  databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
-  projectId: 'ain-v1-manager-staging',
-  storageBucket: 'ain-v1-manager-staging.appspot.com',
-  messagingSenderId: '222638069988',
-  appId: '1:222638069988:web:d66c87762bb56e2aaa74f1',
-  measurementId: 'G-L87MHFHMJJ',
+  apiKey: 'AIzaSyA5kRVMdA0epW5MUZJoC7shC-bLjqnxt-0',
+  authDomain: 'ain-v1-manager-prod.firebaseapp.com',
+  databaseURL: 'https://ain-v1-manager-prod.firebaseio.com',
+  projectId: 'ain-v1-manager-prod',
+  storageBucket: 'ain-v1-manager-prod.appspot.com',
+  messagingSenderId: '1072880050549',
+  appId: '1:1072880050549:web:9d914b8ed6bc5686e2f33c',
+  measurementId: 'G-K3VZW4V0PR',
 } : {
   // staging
   VERSION: '1.0.0',

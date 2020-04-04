@@ -76,8 +76,7 @@ export default class k8s {
     }
   }
 
-
-  static async create(containerId: string) {
+  static async create(containerId: string, publickey: string) {
     let exist = false;
     try {
       const data = await util.promisify(fs.readFile)(`${YAML_PATH}/template.yaml`, 'utf8');
@@ -107,6 +106,7 @@ export default class k8s {
         exist = await k8s.checkRunning(containerId);
         if (exist) break;
       }
+      await delay(10000);
       return exist;
     } catch (e) {
       await exec(`rm -rf ${YAML_PATH}/${containerId}.yaml`);
