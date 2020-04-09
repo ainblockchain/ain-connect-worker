@@ -13,6 +13,8 @@ const log = Logger.createLogger('handler.manager');
 export default class Manager {
   static instance: Manager;
 
+  private listener: firebase.firestore.CollectionReference<firebase.firestore.DocumentData>
+
   // single tone
   static getInstance() {
     if (Manager.instance === undefined) {
@@ -29,8 +31,10 @@ export default class Manager {
       }
       log.info('[+] succeeded to init kubernetes');
       firebase.initializeApp(constants.firebaseConfig);
-      const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
-      listener.onSnapshot(this.createEvent);
+      this.listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
+      this.listener.onSnapshot(this.createEvent, (error) => {
+        log.error(`[-] Listener Error - ${error}`);
+      });
       log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
     } catch (error) {
       throw new Error(`<manager> ${error}`);
