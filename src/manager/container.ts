@@ -1,8 +1,14 @@
+import * as firebase from 'firebase/app';
 import { Mutex, MutexInterface } from 'async-mutex';
+import Logger from '../common/logger';
 import k8s from '../util/k8s';
+import encryptionHelper from '../util/encryption';
 import * as constants from '../common/constants';
+import 'firebase/firestore';
+import 'firebase/auth';
+import 'firebase/functions';
 
-
+const log = Logger.createLogger('manager.container');
 const mutex = new Mutex();
 
 export default class Container {
@@ -10,7 +16,8 @@ export default class Container {
 
   private containerInfoRelease: MutexInterface.Releaser;
 
-  private containerDict: {[containerId: string]: {address: string, terminateTime: number}};
+  private containerDict: {[containerId: string]:
+    {address: string, timer?: any, terminateTime: number}};
 
 
   static getInstance(): Container {
@@ -42,11 +49,13 @@ export default class Container {
     }
 
     try {
-      const result = await k8s.create(containerId);
+      const result = await k8s.create(containerId, address);
       if (!result) {
         throw new Error('500');
       }
-      this.containerDict[containerId].terminateTime = Date.now() / 1000 + (reserveAmount / price);
+      const ms = Math.floor(reserveAmount / price) * 1000;
+      this.containerDict[containerId].timer = this.getTimeoutContainer(containerId, address, ms);
+      this.containerDict[containerId].terminateTime = Date.now() / 1000 + ms;
       return 0;
     } catch (error) {
       await this.terminate(containerId);
@@ -59,6 +68,7 @@ export default class Container {
     this.containerInfoRelease = await mutex.acquire();
     try {
       if (!this.containerDict[containerId]) return 510;
+      clearTimeout(this.containerDict[containerId].timer);
       delete this.containerDict[containerId];
     } finally {
       this.containerInfoRelease();
@@ -74,7 +84,13 @@ export default class Container {
 
   extend(containerId: string, price: number, reserveAmount: number): number {
     if (this.containerDict[containerId] === undefined) return 1;
-    this.containerDict[containerId].terminateTime += (reserveAmount / price);
+    this.containerDict[containerId].terminateTime += ((reserveAmount / price) * 1000);
+    if (this.containerDict[containerId].timer) {
+      clearTimeout(this.containerDict[containerId].timer);
+    }
+    const { address } = this.containerDict[containerId];
+    const ms = this.containerDict[containerId].terminateTime - (Date.now() / 1000);
+    this.containerDict[containerId].timer = this.getTimeoutContainer(containerId, address, ms);
     return 0;
   }
 
@@ -101,18 +117,16 @@ export default class Container {
     return (containerCount < constants.MAX_CONTAINER_COUNT && result);
   }
 
-  getTerminateContainers(): {containerId: string, address: string}[] {
-    const currentTime = Date.now() / 1000;
-    const terminateContainers: {containerId: string, address: string}[] = [];
-    Object.keys(this.containerDict).forEach((containerId: string) => {
-      if (this.containerDict[containerId].terminateTime !== 0
-        && this.containerDict[containerId].terminateTime <= currentTime) {
-        terminateContainers.push({ containerId, address: this.containerDict[containerId].address });
-      }
-    });
-    terminateContainers.forEach((containerInfo: {containerId: string, address: string}) => {
-      delete this.containerDict[containerInfo.containerId];
-    });
-    return terminateContainers;
+  getTimeoutContainer(containerId: string, address: string, ms: number) {
+    return setTimeout(async () => {
+      log.debug(`[+] terminate <containerId: ${containerId}>`);
+      await Container.getInstance().terminate(containerId);
+      const resMassage = encryptionHelper.signatureMessage(
+        { address, containerId },
+        constants.CLUSTER_ADDR, constants.SECRET_KEY,
+      );
+      await firebase.functions().httpsCallable('expireContainer')(resMassage);
+      log.debug(`[+] succeeded to terminate <containerId: ${containerId}>`);
+    }, ms);
   }
 }

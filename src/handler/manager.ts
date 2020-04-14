@@ -13,6 +13,8 @@ const log = Logger.createLogger('handler.manager');
 export default class Manager {
   static instance: Manager;
 
+  private listener: firebase.firestore.CollectionReference<firebase.firestore.DocumentData>
+
   // single tone
   static getInstance() {
     if (Manager.instance === undefined) {
@@ -29,9 +31,10 @@ export default class Manager {
       }
       log.info('[+] succeeded to init kubernetes');
       firebase.initializeApp(constants.firebaseConfig);
-      const listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
-      listener.onSnapshot(this.createEvent);
-      this.checkContainers();
+      this.listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
+      this.listener.onSnapshot(this.createEvent, (error) => {
+        log.error(`[-] Listener Error - ${error}`);
+      });
       log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
     } catch (error) {
       throw new Error(`<manager> ${error}`);
@@ -40,7 +43,8 @@ export default class Manager {
 
   public createEvent = async (
     docSnapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>) => {
-    docSnapshot.docChanges().forEach(async (change) => {
+    await docSnapshot.docChanges().forEach(async (change) => {
+      log.debug(`[+] ${change.type} requestId: ${change.doc.id}`);
       if (change.type === 'added') {
         const requestId: string = change.doc.id;
         const params = change.doc.data();
@@ -86,22 +90,5 @@ export default class Manager {
         }
       }
     });
-  }
-
-  private checkContainers() {
-    setInterval(async () => {
-      const container = Container.getInstance();
-      const terminateContainers = container.getTerminateContainers();
-      for (const containerInfo of terminateContainers) {
-        log.debug(`[+] terminate <containerId: ${containerInfo.containerId}>`);
-        await container.terminate(containerInfo.containerId);
-        const resMassage = encryptionHelper.signatureMessage(
-          { address: containerInfo.address, containerId: containerInfo.containerId },
-          constants.CLUSTER_ADDR, constants.SECRET_KEY,
-        );
-        await firebase.functions().httpsCallable('expireContainer')(resMassage);
-        log.debug(`[+] succeeded to terminate <containerId: ${containerInfo.containerId}>`);
-      }
-    }, 1000);
   }
 }
