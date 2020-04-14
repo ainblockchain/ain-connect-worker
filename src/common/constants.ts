@@ -88,6 +88,8 @@ export const ERROR_MESSAGE = {
 // Tracker
 export const TRACKER_HEALTH_MS = 5000;
 
+// Manager
+export const INTERVAL_MS = 600000;
 
 // temp
 export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;

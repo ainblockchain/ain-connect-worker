@@ -15,6 +15,10 @@ export default class Manager {
 
   private listener: firebase.firestore.CollectionReference<firebase.firestore.DocumentData>
 
+  private unsubscribe: any;
+
+  private eventDict: {[requestId: string]: {status: boolean}};
+
   // single tone
   static getInstance() {
     if (Manager.instance === undefined) {
@@ -26,16 +30,30 @@ export default class Manager {
   async start() {
     try {
       const result = await k8s.init();
+      this.eventDict = {};
       if (!result) {
         throw new Error('falied to init kubernetes');
       }
       log.info('[+] succeeded to init kubernetes');
       firebase.initializeApp(constants.firebaseConfig);
       this.listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
-      this.listener.onSnapshot(this.createEvent, (error) => {
-        log.error(`[-] Listener Error - ${error}`);
+      this.unsubscribe = this.listener.onSnapshot({
+        next: this.createEvent,
+        error: (error) => {
+          log.error(`[-] Listener Error - ${error}`);
+        },
       });
       log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
+      setInterval(() => {
+        this.unsubscribe();
+        this.listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
+        this.unsubscribe = this.listener.onSnapshot({
+          next: this.createEvent,
+          error: (error) => {
+            log.error(`[-] Listener Error - ${error}`);
+          },
+        });
+      }, constants.INTERVAL_MS);
     } catch (error) {
       throw new Error(`<manager> ${error}`);
     }
@@ -51,8 +69,12 @@ export default class Manager {
         const {
           containerId, address, price, reserveAmount, type,
         } = params;
+        if (this.eventDict[requestId]) {
+          return;
+        }
         log.debug(`[+] requested <type: ${type}, address: ${address} requestId: ${requestId} containerId: ${containerId}>`);
         const container = Container.getInstance();
+        this.eventDict[requestId] = { status: true };
         try {
           if (type === 'ADD') {
             await container.start(containerId, address, price!, reserveAmount!);
@@ -69,6 +91,7 @@ export default class Manager {
             constants.CLUSTER_ADDR, constants.SECRET_KEY,
           );
           await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
+          delete this.eventDict[requestId];
           log.debug(`[+] succeeded to ${type} <publicKey: ${address}>`);
         } catch (error) {
           const errCode = (constants.ERROR_MESSAGE[error]) ? error : 500;
@@ -86,6 +109,7 @@ export default class Manager {
           } catch (e) {
             log.error(`[-] failed to call functions - ${e}`);
           }
+          delete this.eventDict[requestId];
           log.debug(`[+] failed to ${type} <publicKey: ${address}> - ${error}`);
         }
       }
