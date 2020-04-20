@@ -1,3 +1,4 @@
+import { setIntervalAsync } from 'set-interval-async/dynamic';
 import ClientJsonRpc from '../jsonRpc/index';
 import * as constants from '../common/constants';
 import encryptionHelper from '../util/encryption';
@@ -12,13 +13,16 @@ export default class Tracker {
   static async start() {
     try {
       await Tracker.register();
-      setInterval(async () => {
-        try {
-          await Tracker.healthCheck();
-        } catch (error) {
-          log.error(`[-] failed to send health message - ${error}`);
-        }
-      }, constants.TRACKER_HEALTH_MS);
+      setIntervalAsync(
+        async () => {
+          try {
+            await Tracker.healthCheck();
+          } catch (error) {
+            log.error(`[-] failed to send health message - ${error}`);
+          }
+        },
+        constants.TRACKER_HEALTH_MS,
+      );
       log.info('[+] start to connect on Tracker');
       return true;
     } catch (error) {
@@ -71,6 +75,7 @@ export default class Tracker {
       constants.CLUSTER_ADDR, constants.SECRET_KEY,
     );
     await this.rpcManager.call('ain_healthCheck', healthParams);
+    log.debug('[+] send to message for health check');
   }
 
   static async terminate() {

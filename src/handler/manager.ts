@@ -53,6 +53,7 @@ export default class Manager {
             log.error(`[-] Listener Error - ${error}`);
           },
         });
+        log.debug('[+] reconnect to firestore');
       }, constants.INTERVAL_MS);
     } catch (error) {
       throw new Error(`<manager> ${error}`);
