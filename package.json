@@ -24,6 +24,7 @@
     "@types/hdkey": "^0.7.0",
     "@types/js-yaml": "^3.12.2",
     "@types/node": "^12.0.1",
+    "@types/set-interval-async": "^1.0.0",
     "@types/ws": "^6.0.1",
     "async-mutex": "^0.1.4",
     "axios": "^0.18.0",
@@ -35,6 +36,7 @@
     "hdkey": "^1.1.1",
     "js-yaml": "3.13.1",
     "ping": "^0.2.2",
+    "set-interval-async": "1.0.32",
     "winston": "^3.2.1",
     "ws": "^7.0.0"
   },
@@ -46,6 +48,7 @@
     "watch-node": "node dist/index.js",
     "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript, Node\" -c \"yello.bold, cyan.bold\" \"yarn run watch-ts\" \"yarn run watch-nodemon\"",
     "start": "tsc && node dist/index.js start",
+    "debug": "tsc && node --inspect=localhost:1500 dist/index.js start",
     "lint": "eslint src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts",
     "lint:fix": "eslint --fix src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts"
   }

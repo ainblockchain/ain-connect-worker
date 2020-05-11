@@ -53,6 +53,7 @@ export default class Manager {
             log.error(`[-] Listener Error - ${error}`);
           },
         });
+        log.debug('[+] reconnect to firestore');
       }, constants.INTERVAL_MS);
     } catch (error) {
       throw new Error(`<manager> ${error}`);
@@ -83,7 +84,7 @@ export default class Manager {
           } else if (type === 'EXTEND') {
             await container.extend(containerId, price!, reserveAmount!);
           } else {
-            throw new Error('4');
+            throw '4';
           }
 
           const resMassage = encryptionHelper.signatureMessage(

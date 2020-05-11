@@ -97,7 +97,7 @@ export default class ClientJsonRpc {
    * @param {Numberprivate} timeout - RPC reply timeout value
    * @return {Promise}
    */
-  public async call(method: string, params?: Object | [],
+  public call(method: string, params?: Object | [],
     notify: boolean = false, timeout: number = 0): Promise<any> {
     const id = (this.rpcId + 1) % 2000000000;
     this.rpcId = id;

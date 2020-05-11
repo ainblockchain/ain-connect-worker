@@ -3,6 +3,8 @@ import { mnemonicToSeedSync } from 'bip39';
 
 const HDKey = require('hdkey');
 
+export const HEALTH_PORT = 8000;
+
 const envDev = (process.env.NODE_ENV === 'prod') ? {
   // prod
   VERSION: '1.0.0',
