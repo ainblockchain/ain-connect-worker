@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as util from 'util';
 import { safeLoadAll, safeDump } from 'js-yaml';
-
+import axios from 'axios';
 import * as constants from '../common/constants';
 import Logger from '../common/logger';
 
@@ -65,13 +65,12 @@ export default class k8s {
     }
   }
 
-  static async checkRunning(containerId: string): Promise<boolean> {
+  static async checkRunning(containerUrl: string): Promise<boolean> {
     try {
-      const command = `kubectl get pod $(kubectl get pod -l app=${containerId} -o jsonpath={.items..metadata.name}) --output=jsonpath={.status.phase}`;
-      const data = await exec(command);
-      return data.stdout === 'Running';
+      console.log(containerUrl)
+      const response = await axios.get(`http://${containerUrl}:8000/health`);
+      return response.data === 'ok';
     } catch (e) {
-      log.error(`[-] failed to get pod's status - ${e}`);
       return false;
     }
   }
@@ -80,8 +79,9 @@ export default class k8s {
     let exist = false;
     try {
       const data = await util.promisify(fs.readFile)(`${YAML_PATH}/template.yaml`, 'utf8');
+      const containerUrl = constants.DOMAIN.replace('*', containerId);
       const yaml = data.replace(/CONTAINER_ID/g, containerId).replace(/IMAGE/g, constants.IMAGE!)
-        .replace(/DOMAIN/g, constants.DOMAIN.replace('*', containerId));
+        .replace(/DOMAIN/g, containerUrl);
       const yamlJsons = safeLoadAll(yaml);
       yamlJsons[0].spec.resources.requests.storage = `${constants.STORAGE_LIMIT_Gi}Gi`;
       yamlJsons[1].spec.template.spec.containers[0].resources = {
@@ -103,10 +103,9 @@ export default class k8s {
       // check
       for (let i = 0; i < CHECK_COUNT; i += 1) {
         await delay(HEALTH_CHECK_MS);
-        exist = await k8s.checkRunning(containerId);
+        exist = await k8s.checkRunning(containerUrl);
         if (exist) break;
       }
-      await delay(10000);
       return exist;
     } catch (e) {
       await exec(`rm -rf ${YAML_PATH}/${containerId}.yaml`);

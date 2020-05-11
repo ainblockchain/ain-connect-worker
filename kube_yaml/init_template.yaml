@@ -24,3 +24,10 @@ spec:
       protocol: HTTP
     hosts:
     - DOMAIN
+  - port:
+      number: 8000
+      name: http4
+      protocol: HTTP
+    hosts:
+    - DOMAIN
+  

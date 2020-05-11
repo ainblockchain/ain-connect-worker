@@ -37,6 +37,7 @@ spec:
         - containerPort: 80
         - containerPort: 81
         - containerPort: 82
+        - containerPort: 8000
         volumeMounts:
         - name: CONTAINER_ID-ps
           mountPath: /home/project
@@ -63,6 +64,9 @@ spec:
   - name: tcp3
     port: 82
     targetPort: 82
+  - name: tcp4
+    port: 8000
+    targetPort: 8000
   selector:
     app: CONTAINER_ID
 ---
