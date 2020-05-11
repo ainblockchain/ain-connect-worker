@@ -36,10 +36,10 @@ export default class Container {
     // mutex
     this.containerInfoRelease = await mutex.acquire();
     try {
-      if (this.containerDict[containerId]) throw new Error('550');
+      if (this.containerDict[containerId]) throw '550';
       const ready = await this.getReadyInfo();
 
-      if (!ready) throw new Error('540');
+      if (!ready) throw '540';
       this.containerDict[containerId] = {
         address,
         terminateTime: 0,
@@ -51,7 +51,7 @@ export default class Container {
     try {
       const result = await k8s.create(containerId, address);
       if (!result) {
-        throw new Error('500');
+        throw '500';
       }
       const ms = Math.floor(reserveAmount / price) * 1000;
       this.containerDict[containerId].timer = this.getTimeoutContainer(containerId, address, ms);

@@ -84,7 +84,7 @@ export default class Manager {
           } else if (type === 'EXTEND') {
             await container.extend(containerId, price!, reserveAmount!);
           } else {
-            throw new Error('4');
+            throw '4';
           }
 
           const resMassage = encryptionHelper.signatureMessage(
