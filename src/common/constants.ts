@@ -1,39 +1,32 @@
 import * as ainUtil from '@ainblockchain/ain-util';
 import { mnemonicToSeedSync } from 'bip39';
+import * as fs from 'fs';
+import * as dotenv from 'dotenv';
 
 const HDKey = require('hdkey');
 
-export const HEALTH_PORT = 8000;
-
-const envDev = (process.env.NODE_ENV === 'prod') ? {
-  // prod
-  VERSION: '1.0.0',
-  SERVER_ADDR: 'server.ainetwork.ai',
-  apiKey: 'AIzaSyA5kRVMdA0epW5MUZJoC7shC-bLjqnxt-0',
-  authDomain: 'ain-v1-manager-prod.firebaseapp.com',
-  databaseURL: 'https://ain-v1-manager-prod.firebaseio.com',
-  projectId: 'ain-v1-manager-prod',
-  storageBucket: 'ain-v1-manager-prod.appspot.com',
-  messagingSenderId: '1072880050549',
-  appId: '1:1072880050549:web:9d914b8ed6bc5686e2f33c',
-  measurementId: 'G-K3VZW4V0PR',
-} : {
-  // staging
-  VERSION: '1.0.0',
-  SERVER_ADDR: 'staging.server.ainetwork.ai',
-  apiKey: 'AIzaSyBXiSjPItO-3Oj5ibPTJQXgxfVZUsgo5YI',
-  authDomain: 'ain-v1-manager-staging.firebaseapp.com',
-  databaseURL: 'https://ain-v1-manager-staging.firebaseio.com',
-  projectId: 'ain-v1-manager-staging',
-  storageBucket: 'ain-v1-manager-staging.appspot.com',
-  messagingSenderId: '222638069988',
-  appId: '1:222638069988:web:d66c87762bb56e2aaa74f1',
-  measurementId: 'G-L87MHFHMJJ',
+let envDev = dotenv.parse(fs.readFileSync(`./.env${(process.env.NODE_ENV) ? `.${process.env.NODE_ENV}` : ''}`));
+envDev = {
+  ...envDev,
+  ...JSON.parse(JSON.stringify(process.env)),
 };
 
+// Cluster Config
 export const {
   VERSION,
   SERVER_ADDR,
+  CLUSTER_NAME,
+  CLUSTER_DESCRIPTION,
+  CLUSTER_GPU_NAME,
+  MNEMONIC,
+  CONTAINER_IMAGE,
+  CONTAINER_OS,
+  CONTAINER_APP,
+  CONTAINER_LIBRATY,
+  CONTAINER_GPU_LIMIT,
+  CONTAINER_CPU_LIMIT,
+  CONTAINER_STORAGE_LIMIT,
+  CONTAINER_MEMORY_LIMIT,
   apiKey,
   authDomain,
   databaseURL,
@@ -43,6 +36,15 @@ export const {
   appId,
   measurementId,
 } = envDev;
+export const CLUSTER_DOMAIN = `${CLUSTER_NAME}.ainetwork.ai`;
+export const PRICE_PER_SECOND = Number(envDev.PRICE_PER_HOUR) / 3600;
+export const CONTAINER_COUNT_LIMIT = Number(envDev.CONTAINER_COUNT_LIMIT);
+
+const key = HDKey.fromMasterSeed(mnemonicToSeedSync(MNEMONIC!));
+const mainWallet = key.derive("m/44'/412'/0'/0/0"); /* default wallet address for AIN */
+export const SECRET_KEY = `0x${mainWallet.privateKey.toString('hex')}`;
+export const CLUSTER_ADDR = ainUtil.toChecksumAddress(`0x${ainUtil.pubToAddress(mainWallet.publicKey, true).toString('hex')}`);
+export const CLUSTER_KEY = `${CLUSTER_ADDR}@${CLUSTER_NAME}`;
 
 export const firebaseConfig = {
   apiKey,
@@ -55,37 +57,8 @@ export const firebaseConfig = {
   measurementId,
 };
 
-// Cluster Config
-export const {
-  CLUSTER_NAME,
-  DESCRIPTION,
-  MNEMONIC,
-  IMAGE,
-  GPU_LIMIT,
-  CPU_LIMIT_m,
-  MEMORY_LIMIT_Mi,
-  STORAGE_LIMIT_Gi,
-} = process.env;
-export const PRICE = Number(process.env.PRICE) / 3600;
-export const MAX_CONTAINER_COUNT = Number(process.env.MAX_CONTAINER_COUNT) || 5;
-export const CONTAINER_IMAGE = IMAGE;
-
-const key = HDKey.fromMasterSeed(mnemonicToSeedSync(MNEMONIC!));
-const mainWallet = key.derive("m/44'/412'/0'/0/0"); /* default wallet address for AIN */
-export const SECRET_KEY = `0x${mainWallet.privateKey.toString('hex')}`;
-export const CLUSTER_ADDR = ainUtil.toChecksumAddress(`0x${ainUtil.pubToAddress(mainWallet.publicKey, true).toString('hex')}`);
-export const CLUSTER_KEY = `${CLUSTER_ADDR}@${CLUSTER_NAME}`;
-
-export const ERROR_MESSAGE = {
-  500: 'failed to start',
-  510: 'failed to terminate',
-  520: 'failed to extend',
-  530: 'invalid parameter',
-  540: 'not ready',
-  550: 'already exists',
-  600: 'Unexpected Error',
-};
-
+// Container
+export const HEALTH_PORT = 8000;
 
 // Tracker
 export const TRACKER_HEALTH_MS = 5000;
@@ -93,16 +66,25 @@ export const TRACKER_HEALTH_MS = 5000;
 // Manager
 export const INTERVAL_MS = 600000;
 
-// temp
-export const DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
-
 export const checkConstants = async () => {
-  const clusterNamingRule = /^[a-zA-Z0-9-]*$/;
-  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME)
-    && CLUSTER_NAME.length > 2 && CLUSTER_NAME.length < 63)
-    && (MNEMONIC && IMAGE && DESCRIPTION)
-    && (STORAGE_LIMIT_Gi && !Number.isNaN(Number(STORAGE_LIMIT_Gi)))
-    && (PRICE && !Number.isNaN(Number(PRICE)));
+  const clusterNamingRule = /^[a-zA-Z0-9-]*.{2,63}$/;
+  const containerImageRule = /^[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+(:[a-zA-Z0-9-]+|)$/;
+  const memorySpecRule = /^[0-9]+(Ei|Pi|Ti|Gi|Mi|Ki)+$/;
+  const cpuSpecRule = /^[0-9]+(.[0-9]+|)$/;
+  const gpuSpecRule = /^[0-9]+$/;
+  const storageSpecRule = /^[0-9]+(Ei|Pi|Ti|Gi|Mi|Ki)+$/;
+
+  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME))
+    && (CLUSTER_DESCRIPTION && CONTAINER_OS && CONTAINER_APP && CONTAINER_LIBRATY)
+    && (VERSION && SERVER_ADDR && CLUSTER_GPU_NAME)
+    && (MNEMONIC && MNEMONIC.split(' ').length === 12)
+    && (CONTAINER_IMAGE && containerImageRule.test(CONTAINER_IMAGE))
+    && (CONTAINER_GPU_LIMIT && gpuSpecRule.test(CONTAINER_GPU_LIMIT))
+    && (CONTAINER_CPU_LIMIT && cpuSpecRule.test(CONTAINER_CPU_LIMIT))
+    && (CONTAINER_STORAGE_LIMIT && storageSpecRule.test(CONTAINER_STORAGE_LIMIT))
+    && (CONTAINER_MEMORY_LIMIT && memorySpecRule.test(CONTAINER_MEMORY_LIMIT))
+    && (CONTAINER_COUNT_LIMIT && !Number.isNaN(CONTAINER_COUNT_LIMIT))
+    && (!Number.isNaN(PRICE_PER_SECOND));
 
   if (!result) {
     throw Error('<constants> invalid constants');

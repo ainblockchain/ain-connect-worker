@@ -1,5 +1,6 @@
 import * as firebase from 'firebase/app';
 import * as constants from '../common/constants';
+import { CustomError, STATUS_CODE, errorCategoryInfo } from '../common/error';
 import Logger from '../common/logger';
 import Container from '../manager/container';
 import encryptionHelper from '../util/encryption';
@@ -32,23 +33,23 @@ export default class Manager {
       const result = await k8s.init();
       this.eventDict = {};
       if (!result) {
-        throw new Error('falied to init kubernetes');
+        throw new CustomError(errorCategoryInfo.startManager, STATUS_CODE.failedToInitK8s);
       }
-      log.info('[+] succeeded to init kubernetes');
+      log.info('[+] succeeded to initialize kubernetes');
       firebase.initializeApp(constants.firebaseConfig);
       this.listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
       this.unsubscribe = this.listener.onSnapshot({
-        next: this.createEvent,
+        next: this.listenEvent,
         error: (error) => {
           log.error(`[-] Listener Error - ${error}`);
         },
       });
-      log.info(`[+] start to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
+      log.info(`[+] started to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
       setInterval(() => {
         this.unsubscribe();
         this.listener = firebase.firestore().collection(`cluster_list/${constants.CLUSTER_KEY}/request_queue`);
         this.unsubscribe = this.listener.onSnapshot({
-          next: this.createEvent,
+          next: this.listenEvent,
           error: (error) => {
             log.error(`[-] Listener Error - ${error}`);
           },
@@ -60,10 +61,9 @@ export default class Manager {
     }
   }
 
-  public createEvent = async (
+  public listenEvent = async (
     docSnapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>) => {
     await docSnapshot.docChanges().forEach(async (change) => {
-      log.debug(`[+] ${change.type} requestId: ${change.doc.id}`);
       if (change.type === 'added') {
         const requestId: string = change.doc.id;
         const params = change.doc.data();
@@ -78,13 +78,13 @@ export default class Manager {
         this.eventDict[requestId] = { status: true };
         try {
           if (type === 'ADD') {
-            await container.start(containerId, address, price!, reserveAmount!);
+            await container.create(containerId, address, price!, reserveAmount!);
           } else if (type === 'TERMINATE') {
-            await container.terminate(containerId);
+            await container.delete(containerId);
           } else if (type === 'EXTEND') {
             await container.extend(containerId, price!, reserveAmount!);
           } else {
-            throw '4';
+            throw new CustomError(errorCategoryInfo.eventManager, STATUS_CODE.invalidParams);
           }
 
           const resMassage = encryptionHelper.signatureMessage(
@@ -93,15 +93,19 @@ export default class Manager {
           );
           await firebase.functions().httpsCallable('requestContainerResponse')(resMassage);
           delete this.eventDict[requestId];
-          log.debug(`[+] succeeded to ${type} <publicKey: ${address}>`);
+          log.debug(`[+] succeeded <type: ${type}, address: ${address} requestId: ${requestId} containerId: ${containerId}>`);
         } catch (error) {
-          const errCode = (constants.ERROR_MESSAGE[error]) ? error : 500;
+          const errorObject = (error instanceof CustomError)
+            ? error : new CustomError(errorCategoryInfo.createContainer,
+              STATUS_CODE.Unexpected, JSON.stringify(error));
+
+          const { statusCode, message } = errorObject.getInfo();
           const resMassage = encryptionHelper.signatureMessage(
             {
               clusterKey: constants.CLUSTER_KEY,
               requestId,
-              errCode,
-              errMessage: constants.ERROR_MESSAGE[errCode],
+              errCode: statusCode,
+              errMessage: message,
             },
             constants.CLUSTER_ADDR, constants.SECRET_KEY,
           );
@@ -111,7 +115,7 @@ export default class Manager {
             log.error(`[-] failed to call functions - ${e}`);
           }
           delete this.eventDict[requestId];
-          log.debug(`[+] failed to ${type} <publicKey: ${address}> - ${error}`);
+          log.debug(`[+] failed <type: ${type}, address: ${address} requestId: ${requestId} containerId: ${containerId}> \n ${errorObject.showAlert()}`);
         }
       }
     });

@@ -39,7 +39,32 @@ export default class k8s {
     try {
       await exec('kubectl delete svc,gateway,pod,deploy,VirtualService,PersistentVolumeClaim,PersistentVolume --all');
       const data = await util.promisify(fs.readFile)(`${YAML_PATH}/init_template.yaml`, 'utf8');
-      const yaml = data.replace(/DOMAIN/g, `"${constants.DOMAIN}"`);
+      const yaml = data.replace(/DOMAIN/g, `"${constants.CLUSTER_DOMAIN}"`);
+      const result = await exec('kubectl get services -n istio-system istio-ingressgateway -o yaml');
+      const yamlJsons = safeLoadAll(result.stdout);
+      const startNodePort = yamlJsons[0].spec.ports[2].nodePort;
+      const openPortList = [81, 82, 8000, 84];
+      for (const idx in openPortList) {
+        if ({}.hasOwnProperty.call(openPortList, idx)) {
+          let overlap = false;
+          for (const portInfo of yamlJsons[0].spec.ports) {
+            if (Number(portInfo.port) === openPortList[idx]) {
+              overlap = true;
+              break;
+            }
+          }
+          if (!overlap) {
+            yamlJsons[0].spec.ports.push({
+              name: `http${Number(idx) + 3}`,
+              nodePort: startNodePort + Number(idx) + 1,
+              port: openPortList[idx],
+              protocol: 'TCP',
+              targetPort: openPortList[idx],
+            });
+          }
+        }
+      }
+      await k8s.apply(`${YAML_PATH}/istio-ingressgateway.yaml`, safeDump(yamlJsons[0]));
       await k8s.apply(`${YAML_PATH}/init.yaml`, yaml);
       let exist = false;
       for (let i = 0; i < CHECK_COUNT; i += 1) {
@@ -60,14 +85,13 @@ export default class k8s {
       const data = await exec('kubectl get gateway');
       return !!data.stdout.includes('cluster-gateway');
     } catch (e) {
-      log.error(`[-] failed to get pod's status - ${e}`);
+      log.error(`[-] failed to get Pod Status - ${e}`);
       return false;
     }
   }
 
   static async checkRunning(containerUrl: string): Promise<boolean> {
     try {
-      console.log(containerUrl)
       const response = await axios.get(`http://${containerUrl}:8000/health`);
       return response.data === 'ok';
     } catch (e) {
@@ -75,26 +99,23 @@ export default class k8s {
     }
   }
 
-  static async create(containerId: string, publickey: string) {
+  static async createContainer(containerId: string, publickey: string) {
     let exist = false;
     try {
       const data = await util.promisify(fs.readFile)(`${YAML_PATH}/template.yaml`, 'utf8');
-      const containerUrl = constants.DOMAIN.replace('*', containerId);
-      const yaml = data.replace(/CONTAINER_ID/g, containerId).replace(/IMAGE/g, constants.IMAGE!)
+      const containerUrl = constants.CLUSTER_DOMAIN!.replace('*', containerId);
+      const yaml = data.replace(/CONTAINER_ID/g, containerId).replace(/IMAGE/g, constants.CONTAINER_IMAGE!)
         .replace(/DOMAIN/g, containerUrl);
       const yamlJsons = safeLoadAll(yaml);
-      yamlJsons[0].spec.resources.requests.storage = `${constants.STORAGE_LIMIT_Gi}Gi`;
+      const resources = {
+        'nvidia.com/gpu': (constants.CONTAINER_GPU_LIMIT) ? undefined : constants.CONTAINER_GPU_LIMIT,
+        memory: `${constants.CONTAINER_MEMORY_LIMIT}`,
+        cpu: `${constants.CONTAINER_CPU_LIMIT}`,
+      };
+      yamlJsons[0].spec.resources.requests.storage = `${constants.CONTAINER_STORAGE_LIMIT}`;
       yamlJsons[1].spec.template.spec.containers[0].resources = {
-        limits: {
-          'nvidia.com/gpu': (constants.GPU_LIMIT) ? `${constants.GPU_LIMIT}` : constants.GPU_LIMIT,
-          memory: `${constants.MEMORY_LIMIT_Mi}Mi`,
-          cpu: `${constants.CPU_LIMIT_m}m`,
-        },
-        requests: {
-          'nvidia.com/gpu': (constants.GPU_LIMIT) ? `${constants.GPU_LIMIT}` : constants.GPU_LIMIT,
-          memory: `${constants.MEMORY_LIMIT_Mi}Mi`,
-          cpu: `${constants.CPU_LIMIT_m}m`,
-        },
+        limits: resources,
+        requests: resources,
       };
       for (const yamlJson of yamlJsons) {
         await k8s.apply(`${YAML_PATH}/${containerId}.yaml`, safeDump(JSON.parse(JSON.stringify(yamlJson))));
@@ -114,7 +135,7 @@ export default class k8s {
     }
   }
 
-  static async delete(containerId: string) {
+  static async deleteContainer(containerId: string) {
     await exec(`kubectl delete svc,pod,deploy,VirtualService,PersistentVolumeClaim -l app=${containerId}`);
   }
 }
