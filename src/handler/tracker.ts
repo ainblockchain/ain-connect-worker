@@ -52,7 +52,7 @@ export default class Tracker {
         image: constants.CONTAINER_IMAGE,
         os: constants.CONTAINER_OS,
         app: constants.CONTAINER_APP,
-        library: constants.CONTAINER_LIBRATY,
+        library: constants.CONTAINER_LIBRARY,
       };
       const registerParams = encryptionHelper.signatureMessage(
         {
@@ -64,6 +64,7 @@ export default class Tracker {
         },
         constants.CLUSTER_ADDR, constants.SECRET_KEY,
       );
+
       const registerResult = await this.rpcManager.call('ain_registerCluster', registerParams);
       if (registerResult.data.error) {
         throw new CustomError(
@@ -84,7 +85,6 @@ export default class Tracker {
       constants.CLUSTER_ADDR, constants.SECRET_KEY,
     );
     await this.rpcManager.call('ain_healthCheck', healthParams);
-    log.debug('[+] send to message for health check');
   }
 
   static async terminate() {

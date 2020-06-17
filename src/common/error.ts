@@ -23,7 +23,7 @@ export const errorCategoryInfo = {
 };
 
 export const errorMessage = {
-  1: 'process time time out.',
+  1: 'process time out.',
   2: 'it is invalid parameter.',
   3: 'it is not ready yet.',
   4: 'it is already exists.',
