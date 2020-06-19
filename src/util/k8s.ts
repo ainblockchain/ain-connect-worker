@@ -108,7 +108,7 @@ export default class k8s {
         .replace(/DOMAIN/g, containerUrl);
       const yamlJsons = safeLoadAll(yaml);
       const resources = {
-        'nvidia.com/gpu': (constants.CONTAINER_GPU_LIMIT) ? undefined : constants.CONTAINER_GPU_LIMIT,
+        'nvidia.com/gpu': (constants.CONTAINER_GPU_LIMIT === '0') ? undefined : constants.CONTAINER_GPU_LIMIT,
         memory: `${constants.CONTAINER_MEMORY_LIMIT}`,
         cpu: `${constants.CONTAINER_CPU_LIMIT}`,
       };

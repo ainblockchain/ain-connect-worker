@@ -40,6 +40,7 @@ export default class Tracker {
       const clusterInfo = {
         address: constants.CLUSTER_ADDR,
         clusterName: constants.CLUSTER_NAME,
+        title: constants.CLUSTER_TITLE,
         description: constants.CLUSTER_DESCRIPTION,
         priceBySec: constants.PRICE_PER_SECOND,
         gpuName: constants.CLUSTER_GPU_NAME,
