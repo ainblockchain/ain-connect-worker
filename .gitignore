@@ -126,6 +126,5 @@ squad*
 node_modules
 sockets
 
-.env.development
-.env.production
+.env.*
 .DS_Store

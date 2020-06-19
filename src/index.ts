@@ -13,16 +13,16 @@ app.get('/health', (_, res) => {
   res.send('ok');
 });
 app.listen(constants.HEALTH_PORT, '0.0.0.0', () => {
-  log.info('started to listen for health');
+  log.info('[+] started to listen for checking health');
 });
 
-program.version(constants.VERSION);
+program.version(constants.VERSION!);
 
 program.command('start').action(async () => {
   try {
     await constants.checkConstants();
-    await Tracker.start();
     await Manager.getInstance().start();
+    await Tracker.start();
   } catch (error) {
     log.error(`[-] ${error}`);
     process.exit(1);
