@@ -40,7 +40,7 @@ spec:
         - containerPort: 8000
         volumeMounts:
         - name: CONTAINER_ID-ps
-          mountPath: /home/project
+          mountPath: /home/workspace
       volumes:
       - name: CONTAINER_ID-ps
         persistentVolumeClaim:
