@@ -3,19 +3,6 @@
 **AIN Connect Cluster Master** The Cluster Master is the intermediary between the Cluster and the "AIN Connect".
 
 
-# How to set kubectl
-```
-// 0. Install gcloud
-// 1
-gcloud auth login
-// 2
-gcloud config set project {Project Name}
-// 3
-gcloud config set compute/zone {Zone}
-// 4
-gcloud container clusters {Cluster Name}	
-```
-
 # How to start
 
 ## Local
@@ -30,15 +17,13 @@ NODE_ENV={staging | prod} yarn start
 ## Docker
 ```
 // 1. add .env.{staging | prod}
-// 2. add account.yaml
-// 3
+// 2
 sudo docker run --name {NAME} -d  \
   -v {Env Path}:/server/.env \
   -v {account.yaml Path}:/root/.kube/config
   ainblockchain/ainblockchain/ain-connect-cluster-{staging | prod}:{Tag}
 ```
 - how to install docker (https://blog.cosmosfarm.com/archives/248/%EC%9A%B0%EB%B6%84%ED%88%AC-18-04-%EB%8F%84%EC%BB%A4-docker-%EC%84%A4%EC%B9%98-%EB%B0%A9%EB%B2%95/)
-- how to create account.yaml: "NAME={account_name} ./create_account.sh" after set kubectl.
 
 
 # How to deploy docker image

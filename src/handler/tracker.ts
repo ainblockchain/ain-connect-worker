@@ -3,7 +3,6 @@ import ClientJsonRpc from '../jsonRpc/index';
 import * as constants from '../common/constants';
 import encryptionHelper from '../util/encryption';
 import Logger from '../common/logger';
-import Container from '../manager/container';
 import { CustomError, STATUS_CODE, errorCategoryInfo } from '../common/error';
 
 const log = Logger.createLogger('handler.tracker');
@@ -33,31 +32,28 @@ export default class Tracker {
 
   static async register() {
     try {
-      const ready = await Container.getInstance().getReadyInfo();
-      if (!ready) {
-        throw new CustomError(errorCategoryInfo.registerTracker, STATUS_CODE.notReady);
-      }
       const clusterInfo = {
         address: constants.CLUSTER_ADDR,
         clusterName: constants.CLUSTER_NAME,
-        title: constants.CLUSTER_TITLE,
-        description: constants.CLUSTER_DESCRIPTION,
-        priceBySec: constants.PRICE_PER_SECOND,
-        gpuName: constants.CLUSTER_GPU_NAME,
+        title: '',
+        description: '',
+        priceBySec: '1',
+        gpuName: '',
+        isPivate: 1,
       };
       const containerSpec = {
-        cpu: `${constants.CONTAINER_CPU_LIMIT} vCPU`,
-        gpu: constants.CONTAINER_GPU_LIMIT,
-        memory: `${constants.CONTAINER_MEMORY_LIMIT}B`,
-        storage: `${constants.CONTAINER_STORAGE_LIMIT}B`,
-        image: constants.CONTAINER_IMAGE,
-        os: constants.CONTAINER_OS,
-        app: constants.CONTAINER_APP,
-        library: constants.CONTAINER_LIBRARY,
+        cpu: '',
+        gpu: '',
+        memory: '',
+        storage: '',
+        image: '',
+        os: '',
+        app: '',
+        library: '',
       };
       const registerParams = encryptionHelper.signatureMessage(
         {
-          ready: Number(ready),
+          ready: 1,
           clusterKey: constants.CLUSTER_KEY,
           version: constants.VERSION,
           containerSpec: JSON.stringify(containerSpec),
@@ -80,9 +76,8 @@ export default class Tracker {
   }
 
   static async healthCheck() {
-    const healthReedy = await Container.getInstance().getReadyInfo();
     const healthParams = encryptionHelper.signatureMessage(
-      { clusterKey: constants.CLUSTER_KEY, ready: Number(healthReedy) },
+      { clusterKey: constants.CLUSTER_KEY, ready: 1 },
       constants.CLUSTER_ADDR, constants.SECRET_KEY,
     );
     await this.rpcManager.call('ain_healthCheck', healthParams);
