@@ -1,24 +1,35 @@
-FROM ubuntu:18.04
+FROM node:12.16.1-alpine AS build
+
+# copy server code.
+RUN npm install -g npm
+RUN mkdir /server
+WORKDIR /server
+ADD package.json /server
+ADD ./tsconfig.json /server/tsconfig.json
+RUN npm install 
+RUN npm install -g typescript
+ADD ./src /server/src
+RUN tsc
+
+FROM node:12.16.1-slim
 
 RUN apt-get update
-# install nodeJS and npm.
-RUN apt-get install -y \
-        nodejs \
-        curl \
-        npm
+RUN apt-get install -y curl
 
-# install yarn
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-    && apt-get update && apt-get install -y yarn
+# install kubectl
+RUN apt-get update && apt-get install -y apt-transport-https python3 gnupg make g++
+RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list
+RUN apt-get update
+RUN apt-get install -y kubectl
+ENV PATH $PWD/bin:$PATH
+RUN mkdir /root/.kube
 
+RUN mkdir /server
+ADD package.json /server
+ADD ./kube_yaml /server/kube_yaml
+COPY --from=build /server/dist /server/dist
+WORKDIR /server
+RUN npm install --only=prod
 
-# copy ain-v1-worker code.
-RUN mkdir /ain-connect-worker
-ADD package.json /ain-connect-worker
-ADD ./ /ain-connect-worker
-
-WORKDIR /ain-connect-worker
-RUN yarn
-
-CMD ["yarn", "start"]
+CMD ["node", "dist/index.js", "start"]
