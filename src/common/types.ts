@@ -1,5 +1,5 @@
 export type Request = {
-  type: 'ADD' | 'EXTEND' | 'TERMINATE'| 'AINIZE',
+  type: 'AINIZE',
   publicKey: string;
   serviceId: string;
   price?: number,

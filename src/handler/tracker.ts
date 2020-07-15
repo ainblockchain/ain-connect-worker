@@ -39,7 +39,7 @@ export default class Tracker {
         description: '',
         priceBySec: '0',
         gpuName: '',
-        isPivate: 1,
+        isPrivate: 1,
       };
       const containerSpec = {
         cpu: '',
