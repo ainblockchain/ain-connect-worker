@@ -37,7 +37,7 @@ export default class Tracker {
         clusterName: constants.CLUSTER_NAME,
         title: '',
         description: '',
-        priceBySec: '1',
+        priceBySec: '0',
         gpuName: '',
         isPivate: 1,
       };
