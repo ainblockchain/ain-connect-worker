@@ -1,36 +1,23 @@
 export const enum STATUS_CODE {
   success = '0',
-  timeout = '1',
   invalidParams = '2',
-  notReady = '3',
-  alreadyExists = '4',
-  notExists = '5',
-  failedToInitK8s = '6',
   callError = '7',
   Unexpected = '500',
 }
 
 export const errorCategoryInfo = {
-  // Container
-  createContainer: 'failed to create container.',
-  deleteContainer: 'failed to delete container.',
-  extendContainer: 'falied to extend reserve amount.',
   // Tracker
-  registerTracker: 'failed to register',
+  registerTracker: 'Failed to register',
   // Manager
-  startManager: 'failed to listen to firestore',
-  eventManager: 'event error',
+  runCommand: 'Failed to run',
+  startManager: 'Failed to listen to Firestore',
+  eventManager: 'Event Error',
 };
 
 export const errorMessage = {
-  1: 'process time out.',
-  2: 'it is invalid parameter.',
-  3: 'it is not ready yet.',
-  4: 'it is already exists.',
-  5: 'it is not exists.',
-  6: 'failed to initialize k8s',
-  7: 'failed to call functions',
-  500: 'it is unexpected result.',
+  2: 'It is invalid parameter.',
+  7: 'Failed to call functions',
+  500: 'It is unexpected result.',
 };
 
 export class CustomError extends Error {

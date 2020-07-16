@@ -16,18 +16,7 @@ export const {
   VERSION,
   SERVER_ADDR,
   CLUSTER_NAME,
-  CLUSTER_DESCRIPTION,
-  CLUSTER_GPU_NAME,
-  CLUSTER_TITLE,
   MNEMONIC,
-  CONTAINER_IMAGE,
-  CONTAINER_OS,
-  CONTAINER_APP,
-  CONTAINER_LIBRARY,
-  CONTAINER_GPU_LIMIT,
-  CONTAINER_CPU_LIMIT,
-  CONTAINER_STORAGE_LIMIT,
-  CONTAINER_MEMORY_LIMIT,
   apiKey,
   authDomain,
   databaseURL,
@@ -37,9 +26,8 @@ export const {
   appId,
   measurementId,
 } = envDev;
-export const CLUSTER_DOMAIN = `*.${CLUSTER_NAME}.ainetwork.ai`;
-export const PRICE_PER_SECOND = Number(envDev.PRICE_PER_HOUR) / 3600;
 export const CONTAINER_COUNT_LIMIT = Number(envDev.CONTAINER_COUNT_LIMIT);
+export const ALLOW_PK_LIST = (envDev.ALLOW_PK_LIST || '').split(' ');
 
 const key = HDKey.fromMasterSeed(mnemonicToSeedSync(MNEMONIC!));
 const mainWallet = key.derive("m/44'/412'/0'/0/0"); /* default wallet address for AIN */
@@ -69,23 +57,11 @@ export const INTERVAL_MS = 600000;
 
 export const checkConstants = async () => {
   const clusterNamingRule = /^[a-zA-Z0-9-]*.{2,63}$/;
-  const containerImageRule = /^[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+(:[a-zA-Z0-9-]+|)$/;
-  const memorySpecRule = /^[0-9]+(Ei|Pi|Ti|Gi|Mi|Ki)+$/;
-  const cpuSpecRule = /^[0-9]+(.[0-9]+|)$/;
-  const gpuSpecRule = /^[0-9]+$/;
-  const storageSpecRule = /^[0-9]+(Ei|Pi|Ti|Gi|Mi|Ki)+$/;
 
-  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME))
-    && (CLUSTER_DESCRIPTION && CONTAINER_OS && CONTAINER_APP && CONTAINER_LIBRARY)
-    && (VERSION && SERVER_ADDR && CLUSTER_GPU_NAME)
+  const result = (CLUSTER_NAME && clusterNamingRule.test(CLUSTER_NAME)
+    && (VERSION && SERVER_ADDR)
     && (MNEMONIC && MNEMONIC.split(' ').length === 12)
-    && (CONTAINER_IMAGE && containerImageRule.test(CONTAINER_IMAGE))
-    && (CONTAINER_GPU_LIMIT && gpuSpecRule.test(CONTAINER_GPU_LIMIT))
-    && (CONTAINER_CPU_LIMIT && cpuSpecRule.test(CONTAINER_CPU_LIMIT))
-    && (CONTAINER_STORAGE_LIMIT && storageSpecRule.test(CONTAINER_STORAGE_LIMIT))
-    && (CONTAINER_MEMORY_LIMIT && memorySpecRule.test(CONTAINER_MEMORY_LIMIT))
-    && (CONTAINER_COUNT_LIMIT && !Number.isNaN(CONTAINER_COUNT_LIMIT))
-    && (!Number.isNaN(PRICE_PER_SECOND));
+  );
 
   if (!result) {
     throw Error('<constants> invalid constants');

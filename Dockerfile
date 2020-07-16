@@ -27,7 +27,6 @@ RUN mkdir /root/.kube
 
 RUN mkdir /server
 ADD package.json /server
-ADD ./kube_yaml /server/kube_yaml
 COPY --from=build /server/dist /server/dist
 WORKDIR /server
 RUN npm install --only=prod

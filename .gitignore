@@ -128,3 +128,5 @@ sockets
 
 .env.*
 .DS_Store
+test.js
+test.yaml
