@@ -21,8 +21,8 @@ program.version(constants.VERSION!);
 program.command('start').action(async () => {
   try {
     await constants.checkConstants();
-    await Manager.getInstance().start();
     await Tracker.start();
+    await Manager.getInstance().start();
   } catch (error) {
     log.error(`[-] ${error}`);
     process.exit(1);
