@@ -6,9 +6,9 @@ import {
 import Logger from '../common/logger';
 import encryptionHelper from '../util/encryption';
 import k8s from '../util/k8s';
-import 'firebase/firestore';
-import 'firebase/auth';
-import 'firebase/functions';
+import '@firebase/firestore';
+import '@firebase/auth';
+import '@firebase/functions';
 
 const log = Logger.createLogger('handler.manager');
 
@@ -42,14 +42,18 @@ export default class Manager {
       });
       log.info(`[+] Started to listen on Manager firestore [Cluster Key: ${constants.CLUSTER_KEY}]`);
       setInterval(() => {
+        log.debug('[+] unsubscribe');
         this.unsubscribe();
+        log.debug('[+] listener');
         this.listener = firebase.firestore().collection(Manager.listenPath);
+        log.debug('[+] onSnapshot');
         this.unsubscribe = this.listener.onSnapshot({
           next: this.listenEvent,
           error: (error) => {
             log.error(`[-] Listener Error - ${error}`);
           },
         });
+        log.debug('[+] reconnect');
       }, constants.INTERVAL_MS);
     } catch (error) {
       throw new Error(`<manager> ${error}`);
