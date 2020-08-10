@@ -85,7 +85,11 @@ export default class Tracker {
       { clusterKey: constants.CLUSTER_KEY, ready: Number(healthReedy) },
       constants.CLUSTER_ADDR, constants.SECRET_KEY,
     );
-    await this.rpcManager.call('ain_healthCheck', healthParams);
+    const result = await this.rpcManager.call('ain_healthCheck', healthParams);
+    log.debug(result.data);
+    if (result.data.success === false) {
+      await this.register();
+    }
   }
 
   static async terminate() {

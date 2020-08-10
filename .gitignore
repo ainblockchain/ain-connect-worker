@@ -128,3 +128,4 @@ sockets
 
 .env.*
 .DS_Store
+test.*
