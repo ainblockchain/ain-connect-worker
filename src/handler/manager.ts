@@ -6,9 +6,9 @@ import {
 import Logger from '../common/logger';
 import encryptionHelper from '../util/encryption';
 import k8s from '../util/k8s';
-import 'firebase/firestore';
-import 'firebase/auth';
-import 'firebase/functions';
+import '@firebase/firestore';
+import '@firebase/auth';
+import '@firebase/functions';
 
 const log = Logger.createLogger('handler.manager');
 
