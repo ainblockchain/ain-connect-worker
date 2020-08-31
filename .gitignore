@@ -129,3 +129,5 @@ sockets
 .env.*
 .DS_Store
 test.*
+src/ain-connect-sdk
+temp
