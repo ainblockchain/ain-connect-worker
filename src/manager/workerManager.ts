@@ -51,9 +51,9 @@ export default class WorkerManager {
   private deploy = async (params: types.DeployParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.createResource(params);
+      result = await dockerHandler.deploy(params);
     } else {
-      result = await kubernetesHandler.createResource(params);
+      result = await kubernetesHandler.deploy(params);
     }
     return result;
   };
@@ -61,9 +61,9 @@ export default class WorkerManager {
   private redeploy = async (params: types.RedeployParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.createResource(params);
+      result = await dockerHandler.redeploy(params);
     } else {
-      result = await kubernetesHandler.createResource(params);
+      result = await kubernetesHandler.redeploy(params);
     }
     return result;
   };
@@ -71,9 +71,9 @@ export default class WorkerManager {
   private undeploy = async (params: types.UndeployParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.createResource(params);
+      result = await dockerHandler.undeploy(params);
     } else {
-      result = await kubernetesHandler.createResource(params);
+      result = await kubernetesHandler.undeploy(params);
     }
     return result;
   };
@@ -81,9 +81,9 @@ export default class WorkerManager {
   private createStorage = async (params: types.CreateStorageParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.createResource(params);
+      result = await dockerHandler.createStorage(params);
     } else {
-      result = await kubernetesHandler.createResource(params);
+      result = await kubernetesHandler.createStorage(params);
     }
     return result;
   };
@@ -91,19 +91,19 @@ export default class WorkerManager {
   private deleteStorage = async (params: types.DeleteStorageParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.createResource(params);
+      result = await dockerHandler.deleteStorage(params);
     } else {
-      result = await kubernetesHandler.createResource(params);
+      result = await kubernetesHandler.deleteStorage(params);
     }
     return result;
   };
 
-  private getContainerInfo = async (params: types.GetClusterInfoParams) => {
+  private getContainerInfo = async (params: types.GetContainerInfoParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.createResource(params);
+      result = await dockerHandler.getContainerInfo(params);
     } else {
-      result = await kubernetesHandler.createResource(params);
+      result = await kubernetesHandler.getContainerInfo(params);
     }
     return result;
   };
@@ -111,9 +111,9 @@ export default class WorkerManager {
   private getClusterInfo = async (params: types.GetClusterInfoParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.createResource(params);
+      result = await dockerHandler.getClusterInfo(params);
     } else {
-      result = await kubernetesHandler.createResource(params);
+      result = await kubernetesHandler.getClusterInfo(params);
     }
     return result;
   };
@@ -121,9 +121,9 @@ export default class WorkerManager {
   private getClusterList = async (params: types.GetClusterListParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.deleteResource(params);
+      result = await dockerHandler.getClusterList(params);
     } else {
-      result = await kubernetesHandler.deleteResource(params);
+      result = await kubernetesHandler.getClusterList(params);
     }
     return result;
   };

@@ -1,27 +1,55 @@
 import { types } from '../ain-connect-sdk';
 
-export const createResource = async (params: types.CreateResourceParams) => {
+export const deploy = async (params: types.DeployParams) => {
   const result = {
     statusCode: 1,
   };
   return result;
 };
 
-export const deleteResource = async (params: types.DeleteResourceParams) => {
+export const redeploy = async (params: types.RedeployParams) => {
   const result = {
     statusCode: 1,
   };
   return result;
 };
 
-export const getResourceStatus = async (params: types.GetResourceStatusParams) => {
+export const undeploy = async (params: types.UndeployParams) => {
   const result = {
     statusCode: 1,
   };
   return result;
 };
 
-export const setResourceConfig = async (params: types.SetResourceConfigParams) => {
+export const createStorage = async (params: types.CreateStorageParams) => {
+  const result = {
+    statusCode: 1,
+  };
+  return result;
+};
+
+export const deleteStorage = async (params: types.DeleteStorageParams) => {
+  const result = {
+    statusCode: 1,
+  };
+  return result;
+};
+
+export const getContainerInfo = async (params: types.GetContainerInfoParams) => {
+  const result = {
+    statusCode: 1,
+  };
+  return result;
+};
+
+export const getClusterInfo = async (params: types.GetClusterInfoParams) => {
+  const result = {
+    statusCode: 1,
+  };
+  return result;
+};
+
+export const getClusterList = async (params: types.GetClusterListParams) => {
   const result = {
     statusCode: 1,
   };

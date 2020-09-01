@@ -131,3 +131,4 @@ sockets
 test.*
 src/ain-connect-sdk
 src/temp
+temp
