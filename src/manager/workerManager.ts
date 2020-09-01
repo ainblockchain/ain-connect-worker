@@ -19,7 +19,6 @@ export default class WorkerManager {
 
   public async start() {
     this.clusterInfo = await this.workerSdk.getClusterInfo(this.clusterName);
-
     log.info(`
       workerAddress: ${this.workerSdk.getAddress()}
       clusterName: ${this.clusterInfo.clusterName}
@@ -38,14 +37,18 @@ export default class WorkerManager {
 
   private requestListen() {
     this.workerSdk.listenReqeust(this.clusterInfo.clusterName, {
-      createResource: this.createResource,
-      deleteResource: this.deleteResource,
-      getResourceStatus: this.getResourceStatus,
-      setResourceConfig: this.setResourceConfig,
+      deploy: this.deploy,
+      redeploy: this.redeploy,
+      undeploy: this.undeploy,
+      createStorage: this.createStorage,
+      deleteStorage: this.deleteStorage,
+      getContainerInfo: this.getContainerInfo,
+      getClusterInfo: this.getClusterInfo,
+      getClusterList: this.getClusterList,
     });
   }
 
-  private createResource = async (params: types.CreateResourceParams) => {
+  private deploy = async (params: types.DeployParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
       result = await dockerHandler.createResource(params);
@@ -55,7 +58,67 @@ export default class WorkerManager {
     return result;
   };
 
-  private deleteResource = async (params: types.DeleteResourceParams) => {
+  private redeploy = async (params: types.RedeployParams) => {
+    let result;
+    if (this.clusterInfo.isSingleNode) {
+      result = await dockerHandler.createResource(params);
+    } else {
+      result = await kubernetesHandler.createResource(params);
+    }
+    return result;
+  };
+
+  private undeploy = async (params: types.UndeployParams) => {
+    let result;
+    if (this.clusterInfo.isSingleNode) {
+      result = await dockerHandler.createResource(params);
+    } else {
+      result = await kubernetesHandler.createResource(params);
+    }
+    return result;
+  };
+
+  private createStorage = async (params: types.CreateStorageParams) => {
+    let result;
+    if (this.clusterInfo.isSingleNode) {
+      result = await dockerHandler.createResource(params);
+    } else {
+      result = await kubernetesHandler.createResource(params);
+    }
+    return result;
+  };
+
+  private deleteStorage = async (params: types.DeleteStorageParams) => {
+    let result;
+    if (this.clusterInfo.isSingleNode) {
+      result = await dockerHandler.createResource(params);
+    } else {
+      result = await kubernetesHandler.createResource(params);
+    }
+    return result;
+  };
+
+  private getContainerInfo = async (params: types.GetClusterInfoParams) => {
+    let result;
+    if (this.clusterInfo.isSingleNode) {
+      result = await dockerHandler.createResource(params);
+    } else {
+      result = await kubernetesHandler.createResource(params);
+    }
+    return result;
+  };
+
+  private getClusterInfo = async (params: types.GetClusterInfoParams) => {
+    let result;
+    if (this.clusterInfo.isSingleNode) {
+      result = await dockerHandler.createResource(params);
+    } else {
+      result = await kubernetesHandler.createResource(params);
+    }
+    return result;
+  };
+
+  private getClusterList = async (params: types.GetClusterListParams) => {
     let result;
     if (this.clusterInfo.isSingleNode) {
       result = await dockerHandler.deleteResource(params);
@@ -64,24 +127,4 @@ export default class WorkerManager {
     }
     return result;
   };
-
-  private getResourceStatus = async (params: types.GetResourceStatusParams) => {
-    let result;
-    if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.getResourceStatus(params);
-    } else {
-      result = await kubernetesHandler.getResourceStatus(params);
-    }
-    return result;
-  }
-
-  private setResourceConfig = async (params: types.SetResourceConfigParams) => {
-    let result;
-    if (this.clusterInfo.isSingleNode) {
-      result = await dockerHandler.setResourceConfig(params);
-    } else {
-      result = await kubernetesHandler.setResourceConfig(params);
-    }
-    return result;
-  }
 }

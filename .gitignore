@@ -130,4 +130,4 @@ sockets
 .DS_Store
 test.*
 src/ain-connect-sdk
-temp
+src/temp

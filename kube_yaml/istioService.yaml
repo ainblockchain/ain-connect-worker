@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: <<containerId>>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: <<containerId>>
+    templateVersion: "3"
+  name: <<containerId>>-lb
+  namespace: <<containerId>>
+spec:
+  selector:
+    app: <<containerId>>
+  type: ClusterIP
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: <<containerId>>-gw
+  namespace: <<containerId>>
+  label:
+    templateVersion: "3"
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: <<containerId>>-vsvc
+  namespace: <<containerId>>
+  label:
+    templateVersion: "3"
+spec:
+  hosts:
+  - <<endpoint>>
+  gateways:
+  - <<containerId>>-gw
+  http:
+  - route:
+    - destination:
+        host: <<containerId>>-lb
+    websocketUpgrade: true
+    corsPolicy:
+      allowOrigin:
+      - '*'
+      allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - OPTIONS
