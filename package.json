@@ -12,6 +12,7 @@
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
+    "husky": "^4.2.5",
     "jest": "^24.8.0",
     "ts-jest": "^24.0.2",
     "typescript": "^3.4.5"
@@ -50,5 +51,10 @@
     "debug": "tsc && node --inspect=localhost:1500 dist/index.js start",
     "lint": "eslint src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts",
     "lint:fix": "eslint --fix src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn test && yarn lint"
+    }
   }
 }

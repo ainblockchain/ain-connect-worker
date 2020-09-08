@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: <<containerId>>
+    templateVersion: "1"
+  name:  <<containerId>>
+  namespace:  <<containerId>>
+spec:
+  replicas: <<replicas>>
+  selector:
+    matchLabels:
+      app:  <<containerId>>
+  template:
+    metadata:
+      labels:
+        app:  <<containerId>>
+    spec:
+      containers:
+      - image: <<imagePath>>
+        imagePullPolicy: Always
+        name:  <<containerId>>
