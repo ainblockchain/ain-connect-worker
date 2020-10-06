@@ -4,12 +4,12 @@ echo "
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: $NAME-account
+  name: worker-account
 " > service_account.yaml
 kubectl create -f service_account.yaml
 rm service_account.yaml
 
-secrets=$(kubectl get ServiceAccount $NAME-account  -o jsonpath='{.secrets[0].name}')
+secrets=$(kubectl get ServiceAccount worker-account  -o jsonpath='{.secrets[0].name}')
 token=$(kubectl get secrets ${secrets} -o jsonpath='{.data.token}' | base64 --decode)
 cluster_name=$(kubectl config current-context)
 echo $cluster_name
@@ -20,7 +20,7 @@ echo "
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: $NAME-role
+  name: worker-role
 rules:
 - apiGroups:
   - '*'
@@ -40,15 +40,15 @@ echo "
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: $NAME-role-binding
+  name: worker-role-binding
 subjects:
 - kind: ServiceAccount
-  name: $NAME-account
+  name: worker-account
   namespace: default
   apiGroup: ""
 roleRef:
   kind: ClusterRole
-  name: $NAME-role
+  name: worker-role
   apiGroup: rbac.authorization.k8s.io
 " > role_binding.yaml
 kubectl apply -f role_binding.yaml
@@ -58,7 +58,7 @@ echo "
 apiVersion: v1
 kind: Config
 users:
-- name: $NAME-account
+- name: worker-account
   user:
     token: ${token}
 clusters:
@@ -69,7 +69,7 @@ clusters:
 contexts:
 - context:
     cluster: ${cluster_name}
-    user: $NAME-account
-  name: $NAME-account-context
-current-context: $NAME-account-context
+    user: worker-account
+  name: worker-account-context
+current-context: worker-account-context
 " > config.yaml
