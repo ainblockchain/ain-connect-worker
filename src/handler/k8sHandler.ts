@@ -1,5 +1,11 @@
 import * as k8s from '@kubernetes/client-node';
 
+type HwSpec = {
+  cpu: string;
+  gpu?: number;
+  memory: string;
+};
+
 export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.KubernetesObject) {
   const client = k8s.KubernetesObjectApi.makeApiClient(kubeConfig);
   kubeJson.metadata = kubeJson.metadata || {};
@@ -14,6 +20,33 @@ export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.Kubernetes
     const response = await client.create(kubeJson);
     return response.body;
   }
+}
+
+export async function deleteNamespace(kubeConfig: k8s.KubeConfig, name: string) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+  await k8sApi.deleteNamespace(name);
+}
+
+export async function deleteDeployment(
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
+) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.AppsV1Api);
+  await k8sApi.deleteNamespacedDeployment(name, namespace);
+}
+
+export async function deleteService(
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
+) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+  await k8sApi.deleteNamespacedService(`${name}-lb`, namespace);
+}
+
+export async function deleteStorage(
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
+) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+  await k8sApi.deleteNamespacedPersistentVolumeClaim(`pv-${name}-claim`, namespace);
+  await k8sApi.deletePersistentVolume(`pv-${name}`);
 }
 
 export async function getPodInfo(kubeConfig: k8s.KubeConfig, namespace: string, name: string) {
@@ -40,6 +73,7 @@ export function getNamespaceJson(name: string) {
 
 export function getDeploymentJson(
   name: string, namespace: string, image: string,
+  env?: Object, hwSpec?: HwSpec,
   portList?: number[], storageNameList?: string[],
 ) {
   const templateJson = {
@@ -63,6 +97,8 @@ export function getDeploymentJson(
               name,
               ports: [] as Object[],
               volumeMounts: [] as Object[],
+              resources: {},
+              env: [] as Object[],
             },
           ],
           volumes: [] as Object[],
@@ -70,6 +106,30 @@ export function getDeploymentJson(
       },
     },
   };
+
+  if (hwSpec) {
+    templateJson.spec.template.spec.containers[0].resources = {
+      requests: {
+        cpu: hwSpec.cpu,
+        memory: hwSpec.memory,
+        'nvidia.com/gpu': hwSpec.gpu,
+      },
+      limits: {
+        cpu: hwSpec.cpu,
+        memory: hwSpec.memory,
+        'nvidia.com/gpu': hwSpec.gpu,
+      },
+    };
+  }
+
+  if (env) {
+    for (const key of Object.keys(env)) {
+      templateJson.spec.template.spec.containers[0].env.push({
+        name: key,
+        value: env[key],
+      });
+    }
+  }
 
   if (portList) {
     for (const port of portList) {
@@ -95,7 +155,7 @@ export function getDeploymentJson(
   return templateJson;
 }
 
-export function getServiceJson(name: string, namespace: string, portList: Object[]) {
+export function getServiceJson(name: string, namespace: string, portList: Object) {
   const templateJson = {
     apiVersion: 'v1',
     kind: 'Service',
@@ -155,7 +215,7 @@ export function getVirtualServiceJson(
 }
 
 export function getStorageJson(
-  name: string, namespace: string, serverIp: string, nfsPath: string, storageGb: number,
+  name: string, namespace: string, serverIp: string, nfsPath: string, storageGb: string,
 ) {
   const pvTemplateJson = {
     apiVersion: 'v1',
