@@ -1,5 +1,3 @@
 import Worker from './manager/worker';
 
-export { Worker }
-
-
+export default { Worker };
