@@ -1,7 +1,7 @@
 {
-  "name": "ain-connect-worker",
-  "version": "1.0.0",
-  "description": "AIN Connect Worker",
+  "name": "ain-connect-worker-base",
+  "version": "0.0.1",
+  "description": "AIN Connect Worker Base",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ainblockchain/ain-connect-worker"
