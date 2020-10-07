@@ -1,5 +1,5 @@
 {
-  "name": "ain-connect-worker-base",
+  "name": "@aindev/connect-worker-base",
   "version": "0.0.1",
   "description": "AIN Connect Worker Base",
   "repository": {
