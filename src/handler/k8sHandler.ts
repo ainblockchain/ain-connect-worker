@@ -42,7 +42,7 @@ export async function deleteService(
   await k8sApi.deleteNamespacedService(`${name}-lb`, namespace);
 }
 
-type apiVersion = 'v1alpha3' | 'v1blpha3';
+type apiVersion = 'v1alpha3';
 
 export async function deleteVirtualService(
   kubeConfig: k8s.KubeConfig, apiVersion: apiVersion, name: string, namespace: string,
