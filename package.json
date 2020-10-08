@@ -1,6 +1,6 @@
 {
   "name": "@aindev/connect-worker-base",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "AIN Connect Worker Base",
   "repository": {
     "type": "git",
@@ -41,7 +41,7 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc",
+    "build": "./build.sh",
     "start": "tsc && node dist/index.js",
     "lint": "eslint src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts",
     "lint:fix": "eslint --fix src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts"
