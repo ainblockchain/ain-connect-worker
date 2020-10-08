@@ -42,14 +42,20 @@ export async function deleteService(
   await k8sApi.deleteNamespacedService(`${name}-lb`, namespace);
 }
 
-type apiVersion = 'v1alpha3' | 'v1blpha3';
+type apiVersion = 'v1alpha3';
 
 export async function deleteVirtualService(
   kubeConfig: k8s.KubeConfig, apiVersion: apiVersion, name: string, namespace: string,
 ) {
-  const opts = {};
+  let opts = {};
   kubeConfig.applyToRequest(opts as request.Options);
-  const url = `${kubeConfig.getCurrentCluster()!.server}/apis/networking.istio.io/${apiVersion}/namespaces/${namespace}/virtualservices/${name}`;
+  opts = {
+    qs: {
+      labelSelector: `app=${name}`,
+    },
+    ...opts,
+  };
+  const url = `${kubeConfig.getCurrentCluster()!.server}/apis/networking.istio.io/${apiVersion}/namespaces/${namespace}/virtualservices`;
 
   return new Promise((resolve, reject) => {
     request.delete(url, opts,
@@ -70,13 +76,24 @@ export async function deleteStorage(
   await k8sApi.deletePersistentVolume(`pv-${name}`);
 }
 
-export async function getPodInfo(kubeConfig: k8s.KubeConfig, namespace: string, name: string) {
+export async function getPodInfo(kubeConfig: k8s.KubeConfig, name: string, namespace: string) {
   const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
   const res = await k8sApi.listNamespacedPod(namespace, undefined, undefined, undefined, undefined, `app=${name}`);
-  if (res.body.items[0].status && res.body.items[0].status.conditions) {
-    const { conditions } = res.body.items[0].status;
-    const finalcondition = conditions[conditions.length - 1];
-    return { ...finalcondition };
+  const podInfo = res.body.items[0];
+  if (podInfo && podInfo.status && podInfo.spec) {
+    const containerInfo = podInfo.spec.containers[0];
+    const port = {};
+    if (containerInfo.ports) {
+      for (const portInfo of containerInfo.ports) {
+        port[portInfo.containerPort] = portInfo.protocol;
+      }
+    }
+    return {
+      resourceStatus: podInfo.status.phase || 'Unknown',
+      containerImage: containerInfo.image,
+      env: containerInfo.env,
+      port,
+    };
   }
   throw new Error('-1');
 }
@@ -94,8 +111,8 @@ export function getNamespaceJson(name: string) {
 
 export function getDeploymentJson(
   name: string, namespace: string, image: string,
-  env?: Object, hwSpec?: HwSpec,
-  portList?: number[], storageNameList?: string[],
+  env?: Object, hwSpec?: HwSpec, portList?: number[],
+  storageNameList?: string[], imagePullSecretName?: string,
 ) {
   const templateJson = {
     apiVersion: 'apps/v1',
@@ -122,11 +139,18 @@ export function getDeploymentJson(
               env: [] as Object[],
             },
           ],
+          imagePullSecrets: [] as Object[],
           volumes: [] as Object[],
         },
       },
     },
   };
+
+  if (imagePullSecretName) {
+    templateJson.spec.template.spec.imagePullSecrets.push({
+      name: imagePullSecretName,
+    });
+  }
 
   if (hwSpec) {
     templateJson.spec.template.spec.containers[0].resources = {
@@ -204,7 +228,7 @@ export function getVirtualServiceJson(
     apiVersion: 'networking.istio.io/v1alpha3',
     kind: 'VirtualService',
     metadata: {
-      name: `${name}-vsvc`,
+      name: `${name}-vsvc${port}`,
       namespace,
       labels: { app: name, templateVersion: '3' },
     },
@@ -271,3 +295,8 @@ export function getStorageJson(
   };
   return { pvTemplateJson, pvcTemplateJson };
 }
+
+const kc = new k8s.KubeConfig();
+kc.loadFromFile('./config.yaml');
+
+getPodInfo(kc, 'donghyeon', 'default');

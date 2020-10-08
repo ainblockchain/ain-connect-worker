@@ -79,7 +79,7 @@ describe('k8sHandler.test.ts', () => {
 
   it('getVirtualServiceJson', () => {
     const result = k8s.getVirtualServiceJson(name, namespace, endpoint, gateway, 80);
-    expect(`${name}-vsvc`).toEqual(result.metadata.name);
+    expect(`${name}-vsvc80`).toEqual(result.metadata.name);
     expect(name).toEqual(result.metadata.labels.app);
     expect(namespace).toEqual(result.metadata.namespace);
     expect(endpoint).toEqual(result.spec.hosts[0]);

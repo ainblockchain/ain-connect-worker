@@ -16,22 +16,32 @@ export default class Worker {
 
   public getStorageJson = k8s.getStorageJson
 
+  public k8sDeleteNamespace = k8s.deleteNamespace
+
+  public k8sDeleteDeployment = k8s.deleteDeployment
+
+  public k8sDeleteService = k8s.deleteService
+
+  public k8sDeleteVirtualService = k8s.deleteVirtualService
+
+  public k8sDeleteStorage = k8s.deleteStorage
+
   // @TODO Docker Handler
 
   // SDK Handler
-  public createNamespace = () => ({ statusCode: 0 })
+  public createNamespace = async (_: any) => ({ statusCode: 0 })
 
-  public deleteNamespace = () => ({ statusCode: 0 })
+  public deleteNamespace = async (_: any) => ({ statusCode: 0 })
 
-  public deploy = () => ({ statusCode: 0 })
+  public deploy = async (_: any) => ({ statusCode: 0 })
 
-  public redeploy = () => ({ statusCode: 0 })
+  public redeploy = async (_: any) => ({ statusCode: 0 })
 
-  public undeploy = () => ({ statusCode: 0 })
+  public undeploy = async (_: any) => ({ statusCode: 0 })
 
-  public createStorage = () => ({ statusCode: 0 })
+  public createStorage = async (_: any) => ({ statusCode: 0 })
 
-  public deleteStorage = () => ({ statusCode: 0 })
+  public deleteStorage = async (_: any) => ({ statusCode: 0 })
 
-  public getContainerInfo = () => ({ statusCode: 0 })
+  public getContainerInfo = async (_: any) => ({ statusCode: 0 })
 }
