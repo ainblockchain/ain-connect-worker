@@ -1,10 +1,28 @@
 {
-  "name": "ain-connect-worker",
-  "version": "1.0.0",
-  "main": "index.js",
-  "repository": "https://bitbucket.org/comcomai/ain-connect-worker",
-  "author": "Donghyeon Choi",
-  "license": "ISC",
+  "name": "@aindev/connect-worker-base",
+  "version": "0.0.12",
+  "description": "AIN Connect Worker Base",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ainblockchain/ain-connect-worker"
+  },
+  "bugs": {
+    "url": "https://github.com/ainblockchain/ain-connect-worker/issues"
+  },
+  "homepage": "https://github.com/ainblockchain/ain-connect-worker#readme",
+  "keywords": [
+    "ainetwork",
+    "ain",
+    "ainconnect",
+    "worker"
+  ],
+  "author": "AIN Dev Team",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "devDependencies": {
     "@types/jest": "^24.0.13",
     "@typescript-eslint/eslint-plugin": "^2.22.0",
@@ -18,37 +36,13 @@
     "typescript": "^3.4.5"
   },
   "dependencies": {
-    "@ainblockchain/ain-util": "^1.1.2",
-    "@types/bip39": "^2.4.2",
-    "@types/dotenv": "^8.2.0",
-    "@types/express": "4.16.1",
-    "@types/hdkey": "^0.7.0",
-    "@types/js-yaml": "^3.12.2",
-    "@types/node": "^12.0.1",
-    "@types/set-interval-async": "^1.0.0",
-    "@types/ws": "^6.0.1",
-    "async-mutex": "^0.1.4",
-    "axios": "^0.18.0",
-    "bip39": "^3.0.2",
-    "commander": "^4.1.1",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "firebase": "^7.8.2",
-    "hdkey": "^1.1.1",
-    "js-yaml": "3.13.1",
-    "set-interval-async": "1.0.32",
-    "winston": "^3.2.1",
-    "ws": "^7.0.0"
+    "@kubernetes/client-node": "^0.12.2",
+    "@types/node": "^12.0.1"
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc",
-    "watch-ts": "tsc -w",
-    "watch-nodemon": "nodemon dist/index.js",
-    "watch-node": "node dist/index.js",
-    "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript, Node\" -c \"yello.bold, cyan.bold\" \"yarn run watch-ts\" \"yarn run watch-nodemon\"",
-    "start": "tsc && node dist/index.js start",
-    "debug": "tsc && node --inspect=localhost:1500 dist/index.js start",
+    "build": "./build.sh",
+    "start": "tsc && node dist/index.js",
     "lint": "eslint src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts",
     "lint:fix": "eslint --fix src/*.ts src/**/*.ts src/**/**/*.ts src/**/**/**/*.ts"
   },
