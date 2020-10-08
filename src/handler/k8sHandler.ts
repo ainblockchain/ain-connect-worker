@@ -1,4 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
+import * as request from 'request';
 
 type HwSpec = {
   cpu: string;
@@ -39,6 +40,26 @@ export async function deleteService(
 ) {
   const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
   await k8sApi.deleteNamespacedService(`${name}-lb`, namespace);
+}
+
+type apiVersion = 'v1alpha3' | 'v1blpha3';
+
+export async function deleteVirtualService(
+  kubeConfig: k8s.KubeConfig, apiVersion: apiVersion, name: string, namespace: string,
+) {
+  const opts = {};
+  kubeConfig.applyToRequest(opts as request.Options);
+  const url = `${kubeConfig.getCurrentCluster()!.server}/apis/networking.istio.io/${apiVersion}/namespaces/${namespace}/virtualservices/${name}`;
+
+  return new Promise((resolve, reject) => {
+    request.delete(url, opts,
+      (error, _response, _body) => {
+        if (error) {
+          reject();
+        }
+        resolve(true);
+      });
+  });
 }
 
 export async function deleteStorage(
