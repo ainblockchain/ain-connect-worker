@@ -74,7 +74,7 @@ describe('k8sHandler.test.ts', () => {
     expect(`${name}-lb`).toEqual(result.metadata.name);
     expect(name).toEqual(result.metadata.labels.app);
     expect(namespace).toEqual(result.metadata.namespace);
-    expect({ name: 'tcp80', port: '80', targetPort: 81 }).toEqual(result.spec.ports[0]);
+    expect({ name: 'tcp80', port: 80, targetPort: 81 }).toEqual(result.spec.ports[0]);
   });
 
   it('getVirtualServiceJson', () => {

@@ -216,7 +216,7 @@ export function getServiceJson(name: string, namespace: string, portList: Object
   };
 
   for (const port of Object.keys(portList)) {
-    templateJson.spec.ports.push({ name: `tcp${port}`, port, targetPort: portList[port] });
+    templateJson.spec.ports.push({ name: `tcp${port}`, port: Number(port), targetPort: Number(portList[port]) });
   }
   return templateJson;
 }
