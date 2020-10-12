@@ -295,8 +295,3 @@ export function getStorageJson(
   };
   return { pvTemplateJson, pvcTemplateJson };
 }
-
-const kc = new k8s.KubeConfig();
-kc.loadFromFile('./config.yaml');
-
-getPodInfo(kc, 'donghyeon', 'default');
