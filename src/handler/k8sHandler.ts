@@ -25,7 +25,7 @@ export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.Kubernetes
 }
 
 export async function createSecret(
-  kubeConfig: k8s.KubeConfig, name: string, params: {[key: string]: string},
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string, params: {[key: string]: string},
 ) {
   const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
 
@@ -33,7 +33,7 @@ export async function createSecret(
   for (const key of Object.keys(params)) {
     data[key] = Base64.encode(params[key]);
   }
-  await k8sApi.createNamespacedSecret('default', {
+  await k8sApi.createNamespacedSecret(namespace, {
     apiVersion: 'v1',
     kind: 'Secret',
     type: 'Opaque',
