@@ -1,5 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import * as request from 'request';
+import { Base64 } from 'js-base64';
 
 type HwSpec = {
   cpu: string;
@@ -21,6 +22,26 @@ export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.Kubernetes
     const response = await client.create(kubeJson);
     return response.body;
   }
+}
+
+export async function createSecret(
+  kubeConfig: k8s.KubeConfig, name: string, params: {[key: string]: string},
+) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+
+  const data = {};
+  for (const key of Object.keys(params)) {
+    data[key] = Base64.encode(params[key]);
+  }
+  await k8sApi.createNamespacedSecret('default', {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    type: 'Opaque',
+    metadata: {
+      name,
+    },
+    data,
+  });
 }
 
 export async function deleteNamespace(kubeConfig: k8s.KubeConfig, name: string) {
