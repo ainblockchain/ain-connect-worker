@@ -26,7 +26,7 @@ export default class Worker {
 
   public k8sDeleteStorage = k8s.deleteStorage
 
-  public k8sCreateSecret = k8s.createSecret
+  public createDockerSecret = k8s.createDockerSecret
 
   // @TODO Docker Handler
 

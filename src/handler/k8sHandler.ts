@@ -24,23 +24,31 @@ export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.Kubernetes
   }
 }
 
-export async function createSecret(
-  kubeConfig: k8s.KubeConfig, name: string, namespace: string, params: {[key: string]: string},
+export async function createDockerSecret(
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
+  username: string, password: string, server: string,
 ) {
   const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+  const auth = Base64.encode(`${username}:${password}`);
+  const rawData = {
+    auths: {},
+  };
+  rawData.auths[server] = {
+    username,
+    password,
+    auth,
+  };
 
-  const data = {};
-  for (const key of Object.keys(params)) {
-    data[key] = Base64.encode(params[key]);
-  }
   await k8sApi.createNamespacedSecret(namespace, {
     apiVersion: 'v1',
     kind: 'Secret',
-    type: 'Opaque',
+    type: 'kubernetes.io/dockerconfigjson',
     metadata: {
       name,
     },
-    data,
+    data: {
+      '.dockerconfigjson': Base64.encode(JSON.stringify(rawData)),
+    },
   });
 }
 
@@ -237,7 +245,7 @@ export function getServiceJson(name: string, namespace: string, portList: Object
   };
 
   for (const port of Object.keys(portList)) {
-    templateJson.spec.ports.push({ name: `tcp${port}`, port: Number(port), targetPort: Number(portList[port]) });
+    templateJson.spec.ports.push({ name: `http${port}`, port: Number(port), targetPort: Number(portList[port]) });
   }
   return templateJson;
 }
