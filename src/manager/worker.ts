@@ -4,17 +4,27 @@ export default class Worker {
   // K8s Handler
   public apply = k8s.apply
 
-  public getPodInfo = k8s.getPodInfo
+  // API:Get Info
+  public k8sGetPodInfo = k8s.getPodInfo
 
-  public getNamespaceJson = k8s.getNamespaceJson
+  public k8sWatchNodes = k8s.watchNodes
 
-  public getDeploymentJson = k8s.getDeploymentJson
+  public k8sWatchPods = k8s.watchPods
 
-  public getServiceJson = k8s.getServiceJson
+  public k8sWatchStorage = k8s.watchStorage
 
-  public getVirtualServiceJson = k8s.getVirtualServiceJson
+  // API:Create
+  public k8sCreateNamespace = k8s.createNamespace
 
-  public getStorageJson = k8s.getStorageJson
+  public k8sCreateDeployment = k8s.createDeployment
+
+  public k8sCreateService = k8s.createService
+
+  public k8sCreateVirtualService = k8s.creteaVirtualService
+
+  public k8sCreateStrorage = k8s.createStorage
+
+  public createDockerSecret = k8s.createDockerSecret
 
   public k8sDeleteNamespace = k8s.deleteNamespace
 
@@ -25,8 +35,6 @@ export default class Worker {
   public k8sDeleteVirtualService = k8s.deleteVirtualService
 
   public k8sDeleteStorage = k8s.deleteStorage
-
-  public createDockerSecret = k8s.createDockerSecret
 
   // @TODO Docker Handler
 

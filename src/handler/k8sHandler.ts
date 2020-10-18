@@ -254,7 +254,7 @@ export async function creteaVirtualService(
   return result;
 }
 
-export async function createStorageJson(
+export async function createStorage(
   kubeConfig: k8s.KubeConfig, name: string, namespace: string,
   serverIp: string, nfsPath: string, storageGb: string, labels: {[key: string]: string },
 ) {
