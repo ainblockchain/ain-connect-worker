@@ -20,7 +20,10 @@ export type StorageSpec = {
   name: string,
   mountPath: string,
   subPath?: string,
+  isSecret?: boolean,
 }
+
+export type PhaseStorage = 'Available' | 'Bound' | 'Released' | 'Failed';
 
 export type PhaseList = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
 export type ConditionType = 'Initialized' | 'Ready' | 'ContainersReady' | 'PodScheduled';
@@ -28,7 +31,7 @@ export type ConditionType = 'Initialized' | 'Ready' | 'ContainersReady' | 'PodSc
 export type PodInfo = {
   containerId: string,
   podName: string,
-  namespace: string,
+  namespaceId: string,
   status: {
     phase: PhaseList,
     message?: string
@@ -60,10 +63,10 @@ export type NodeInfo = {
 
 export type storageInfo = {
   name: string,
-  phase: string, // TODO
+  phase: PhaseStorage,
   claim: {
     name: string,
-    namespace: string,
+    namespaceId: string,
   },
 }
 
@@ -171,15 +174,28 @@ export async function createDeployment(
 
   if (storageSpecList) {
     for (const storageSpec of storageSpecList) {
-      templateJson.spec.template.spec.volumes.push({
-        name: `${storageSpec.name}-ps`,
-        persistentVolumeClaim: { claimName: `pv-${storageSpec.name}-claim` },
-      });
-      templateJson.spec.template.spec.containers[0].volumeMounts.push(JSON.parse(JSON.stringify({
-        name: `${storageSpec.name}-ps`,
-        mountPath: storageSpec.mountPath,
-        subPath: storageSpec.subPath,
-      })));
+      if (storageSpec.isSecret) {
+        templateJson.spec.template.spec.volumes.push({
+          name: storageSpec.name,
+          secret: {
+            secretName: storageSpec.name,
+          },
+        });
+        templateJson.spec.template.spec.containers[0].volumeMounts.push(JSON.parse(JSON.stringify({
+          name: storageSpec.name,
+          mountPath: storageSpec.mountPath,
+        })));
+      } else {
+        templateJson.spec.template.spec.volumes.push({
+          name: `${storageSpec.name}-ps`,
+          persistentVolumeClaim: { claimName: `pv-${storageSpec.name}-claim` },
+        });
+        templateJson.spec.template.spec.containers[0].volumeMounts.push(JSON.parse(JSON.stringify({
+          name: `${storageSpec.name}-ps`,
+          mountPath: storageSpec.mountPath,
+          subPath: storageSpec.subPath,
+        })));
+      }
     }
   }
 
@@ -295,11 +311,7 @@ export async function createStorage(
   return { pvResult, pvcResult };
 }
 
-export async function createDockerSecret(
-  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
-  username: string, password: string, server: string,
-) {
-  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+export function getDockerSecretData(username: string, password: string, server: string) {
   const auth = Base64.encode(`${username}:${password}`);
   const rawData = {
     auths: {},
@@ -310,17 +322,38 @@ export async function createDockerSecret(
     auth,
   };
 
+  return {
+    dockerconfigjson: JSON.stringify(rawData),
+  };
+}
+
+export async function createSecret(
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
+  type: string, data: {[key: string]: string},
+) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+
+  const base64Data = {};
+  for (const key of Object.keys(data)) {
+    base64Data[key] = Base64.encode(data[key]);
+  }
   await k8sApi.createNamespacedSecret(namespace, {
     apiVersion: 'v1',
     kind: 'Secret',
-    type: 'kubernetes.io/dockerconfigjson',
+    type,
     metadata: {
       name,
     },
-    data: {
-      '.dockerconfigjson': Base64.encode(JSON.stringify(rawData)),
-    },
+    data: base64Data,
   });
+}
+
+export async function createDockerSecret(
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
+  username: string, password: string, server: string,
+) {
+  const data = getDockerSecretData(username, password, server);
+  await createSecret(kubeConfig, name, namespace, 'kubernetes.io/dockerconfigjson', data);
 }
 
 // API:DELETE
@@ -409,7 +442,7 @@ export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: Pod
         const data = {
           containerId: apiObj.metadata.labels.app,
           podName: apiObj.metadata.name,
-          namespace,
+          namespaceId: namespace,
           status: {
             phase: apiObj.status.phase,
             message: apiObj.status.message,
@@ -469,10 +502,89 @@ export async function watchStorage(
         phase: apiObj.status.phase,
         claim: {
           name: apiObj.spec.claimRef.name,
-          namespace: apiObj.spec.claimRef.namespace,
+          namespaceId: apiObj.spec.claimRef.namespace,
         },
       };
       callback(data);
     },
     (_) => {});
+}
+
+// API:EXIST
+export async function existDeployment(kubeConfig: k8s.KubeConfig, name: string, namespace: string) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.AppsV1Api);
+  try {
+    await k8sApi.readNamespacedDeploymentStatus(name, namespace);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+export async function existStorage(kubeConfig: k8s.KubeConfig, name: string) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+  try {
+    await k8sApi.readPersistentVolume(`pv-${name}`);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+export async function existSecret(kubeConfig: k8s.KubeConfig, name: string, namespace: string) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
+  try {
+    await k8sApi.readNamespacedSecret(name, namespace);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// API:PATCH
+export async function patchDeployment(
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string,
+  env?: Object, replicas?: number, image?: string,
+) {
+  const k8sApi = kubeConfig.makeApiClient(k8s.AppsV1Api);
+  try {
+    const patch = [];
+    if (replicas !== undefined) {
+      patch.push({
+        op: 'replace',
+        path: '/spec/replicas',
+        value: replicas,
+      });
+    }
+    if (image) {
+      patch.push({
+        op: 'replace',
+        path: '/spec/template/spec/containers/0/image',
+        value: image,
+      });
+    }
+
+    if (env) {
+      const envValue = [];
+      for (const key of Object.keys(env)) {
+        envValue.push({
+          name: key,
+          value: String(env[key]),
+        });
+      }
+      patch.push({
+        op: 'replace',
+        path: '/spec/template/spec/containers/0/env',
+        value: envValue,
+      });
+    }
+    if (patch.length !== 0) {
+      const options = { headers: { 'Content-type': 'application/json-patch+json' } };
+      await k8sApi.patchNamespacedDeployment(name, namespace, patch,
+        undefined, undefined, undefined, undefined, options);
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
 }

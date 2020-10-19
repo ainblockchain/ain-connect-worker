@@ -24,7 +24,9 @@ export default class Worker {
 
   public k8sCreateStrorage = k8s.createStorage
 
-  public createDockerSecret = k8s.createDockerSecret
+  public k8sCreateDockerSecret = k8s.createDockerSecret
+
+  public k8sCreateSecret = k8s.createSecret
 
   public k8sDeleteNamespace = k8s.deleteNamespace
 
@@ -35,6 +37,14 @@ export default class Worker {
   public k8sDeleteVirtualService = k8s.deleteVirtualService
 
   public k8sDeleteStorage = k8s.deleteStorage
+
+  public k8sExistDeployment = k8s.existDeployment
+
+  public k8sExistSecret = k8s.existSecret
+
+  public k8sExistStorage = k8s.existStorage
+
+  public k8sPatchDeployment = k8s.patchDeployment
 
   // @TODO Docker Handler
 
@@ -52,6 +62,4 @@ export default class Worker {
   public createStorage = async (_: any) => ({ statusCode: 0 })
 
   public deleteStorage = async (_: any) => ({ statusCode: 0 })
-
-  public getContainerInfo = async (_: any) => ({ statusCode: 0 })
 }
