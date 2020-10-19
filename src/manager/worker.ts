@@ -7,6 +7,8 @@ export default class Worker {
   // API:Get Info
   public k8sGetPodInfo = k8s.getPodInfo
 
+  public k8sGetNodesStatus = k8s.getNodesStatus;
+
   public k8sWatchNodes = k8s.watchNodes
 
   public k8sWatchPods = k8s.watchPods

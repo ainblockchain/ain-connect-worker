@@ -431,6 +431,54 @@ export async function getPodInfo(kubeConfig: k8s.KubeConfig, name: string, names
   throw new Error('-1');
 }
 
+export async function getNodesStatus(
+  kubeConfig: k8s.KubeConfig, nodePoolLabel: string, gpuTypeLabel: string,
+) {
+  const opts = {};
+  kubeConfig.applyToRequest(opts as request.Options);
+
+  const url = `${kubeConfig.getCurrentCluster()!.server}/api/v1/nodes`;
+
+  return new Promise((resolve, reject) => {
+    request.get(url, opts,
+      (error, _response, _body) => {
+        if (error) {
+          reject();
+        }
+        try {
+          const nodePool = {};
+          const nodes = JSON.parse(_body).items;
+          for (const node of nodes) {
+            const nodePoolName = node.metadata.labels[nodePoolLabel];
+            const gpuType = node.metadata.labels[gpuTypeLabel];
+            if (!nodePool[nodePoolName]) {
+              nodePool[nodePoolName] = {
+                gpuType,
+                osImage: node.status.nodeInfo.osImage,
+                node: {},
+              };
+            }
+            nodePool[nodePoolName].node[node.metadata.name] = {
+              capacity: {
+                cpu: node.status.capacity.cpu,
+                memory: node.status.capacity.memory,
+                gpu: node.status.capacity['nvidia.com/gpu'],
+              },
+              allocatable: {
+                cpu: node.status.allocatable.cpu,
+                memory: node.status.allocatable.memory,
+                gpu: node.status.allocatable['nvidia.com/gpu'],
+              },
+            };
+          }
+          resolve(nodePool);
+        } catch (_) {
+          reject();
+        }
+      });
+  });
+}
+
 export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: PodInfo) => void) {
   const watch = new k8s.Watch(kubeConfig);
   await watch.watch('/api/v1/pods', {},
