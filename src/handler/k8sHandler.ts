@@ -46,7 +46,7 @@ export type PodInfo = {
 }
 
 export type NodeInfo = {
-  nodepool: string,
+  labels: { [key: string]: string},
   name: string,
   osImage: string,
   capacity: {
@@ -102,7 +102,7 @@ export async function createNamespace(kubeConfig: k8s.KubeConfig, name: string) 
 
 export async function createDeployment(
   kubeConfig: k8s.KubeConfig, name: string, namespace: string, containerSpec: ContainerSpec,
-  storageSpecList: StorageSpec[], imagePullSecretName?: string,
+  storageSpecList?: StorageSpec[], imagePullSecretName?: string,
   labels?: {[key: string]: string}, nodePoolLabel?: Object, replicas?: number,
 ) {
   const templateJson = {
@@ -205,7 +205,7 @@ export async function createDeployment(
 
 export async function createService(
   kubeConfig: k8s.KubeConfig, name: string, namespace: string,
-  ports: number[], labels: {[key: string]: string },
+  ports: number[], labels?: {[key: string]: string },
 ) {
   const templateJson = {
     apiVersion: 'v1',
@@ -231,7 +231,7 @@ export async function createService(
 
 export async function creteaVirtualService(
   kubeConfig: k8s.KubeConfig, name: string, namespace: string,
-  endpoint: string, gateway: string, port: number, labels: {[key: string]: string },
+  endpoint: string, gateway: string, port: number, labels?: {[key: string]: string },
 ) {
   const templateJson = {
     apiVersion: 'networking.istio.io/v1alpha3',
@@ -272,7 +272,7 @@ export async function creteaVirtualService(
 
 export async function createStorage(
   kubeConfig: k8s.KubeConfig, name: string, namespace: string,
-  serverIp: string, nfsPath: string, storageGb: string, labels: {[key: string]: string },
+  serverIp: string, nfsPath: string, storageGb: string, labels?: {[key: string]: string },
 ) {
   const pvTemplateJson = {
     apiVersion: 'v1',
@@ -462,15 +462,15 @@ export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: Pod
 }
 
 export async function watchNodes(
-  kubeConfig: k8s.KubeConfig, nodepoolLabel: string, callback: (data: NodeInfo) => void,
+  kubeConfig: k8s.KubeConfig, callback: (data: NodeInfo) => void,
 ) {
   const watch = new k8s.Watch(kubeConfig);
   await watch.watch('/api/v1/nodes', {},
     // callback is called for each received object.
     (type, apiObj, _) => {
-      if (apiObj.metadata.labels && apiObj.metadata.labels[nodepoolLabel]) {
+      if (apiObj.metadata.labels) {
         const data = {
-          nodepool: apiObj.metadata.labels[nodepoolLabel],
+          labels: apiObj.metadata.labels,
           name: apiObj.metadata.name,
           osImage: apiObj.status.nodeInfo.osImage,
           capacity: {
