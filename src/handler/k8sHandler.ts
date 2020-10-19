@@ -417,7 +417,7 @@ export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: Pod
             condition: {
               type: apiObj.status.conditions[0].type,
               status: apiObj.status.conditions[0].status,
-              resson: apiObj.status.conditions[0].resson,
+              reason: apiObj.status.conditions[0].reason,
               message: apiObj.status.conditions[0].message,
             },
           },
