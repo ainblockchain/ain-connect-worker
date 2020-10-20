@@ -93,6 +93,8 @@ export type TypeNodeInfo = {
 }
 
 export type TypeStorageInfo = {
+  type: string,
+  storageId: string,
   status: TypeStorageStatus,
   claim: {
     name: string,
