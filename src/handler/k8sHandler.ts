@@ -76,6 +76,27 @@ export type TypePodInfo = {
   }
 }
 
+export type TypeNodePool = {
+  [nodePoolName: string]: {
+    gpuType: string,
+    osImage: string,
+    nodes: {
+      [nodeId: string]: {
+        capacity: {
+          cpu: number,
+          memory: number
+          gpu: number,
+        },
+        allocatable: {
+          cpu: number,
+          memory: number
+          gpu: number,
+        }
+      }
+    }
+  }
+};
+
 export type TypeNodeInfo = {
   labels: { [key: string]: string},
   name: string,
@@ -474,7 +495,7 @@ export async function getNodesStatus(
 
   const url = `${kubeConfig.getCurrentCluster()!.server}/api/v1/nodes`;
 
-  return new Promise((resolve, reject) => {
+  return new Promise<TypeNodePool>((resolve, reject) => {
     request.get(url, opts,
       (error, _response, _body) => {
         if (error) {
@@ -488,20 +509,20 @@ export async function getNodesStatus(
             const gpuType = node.metadata.labels[gpuTypeLabel];
             if (nodePoolName) {
               if (!nodePool[nodePoolName]) {
-                nodePool[nodePoolName] = {
-                  gpuType,
+                nodePool[nodePoolName] = JSON.parse(JSON.stringify({
+                  gpuType: gpuType || '',
                   osImage: node.status.nodeInfo.osImage,
                   nodes: {},
-                };
+                }));
               }
               nodePool[nodePoolName].nodes[node.metadata.name] = {
                 capacity: {
-                  cpu: parseInt(node.status.capacity.cpu, 10),
+                  cpu: parseInt(node.status.capacity.cpu, 10) * 1000,
                   memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
                   gpu: Number(node.status.capacity['nvidia.com/gpu']),
                 },
                 allocatable: {
-                  cpu: parseInt(node.status.capacity.cpu, 10),
+                  cpu: parseInt(node.status.capacity.cpu, 10) * 1000,
                   memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
                   gpu: Number(node.status.allocatable['nvidia.com/gpu']),
                 },
