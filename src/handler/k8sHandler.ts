@@ -358,7 +358,7 @@ export function getDockerSecretData(username: string, password: string, server: 
   };
 
   return {
-    dockerconfigjson: JSON.stringify(rawData),
+    '.dockerconfigjson': JSON.stringify(rawData),
   };
 }
 
@@ -486,25 +486,27 @@ export async function getNodesStatus(
           for (const node of nodes) {
             const nodePoolName = node.metadata.labels[nodePoolLabel];
             const gpuType = node.metadata.labels[gpuTypeLabel];
-            if (!nodePool[nodePoolName]) {
-              nodePool[nodePoolName] = {
-                gpuType,
-                osImage: node.status.nodeInfo.osImage,
-                node: {},
+            if (nodePoolName) {
+              if (!nodePool[nodePoolName]) {
+                nodePool[nodePoolName] = {
+                  gpuType,
+                  osImage: node.status.nodeInfo.osImage,
+                  node: {},
+                };
+              }
+              nodePool[nodePoolName].node[node.metadata.name] = {
+                capacity: {
+                  cpu: parseInt(node.status.capacity.cpu, 10),
+                  memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
+                  gpu: Number(node.status.capacity['nvidia.com/gpu']),
+                },
+                allocatable: {
+                  cpu: parseInt(node.status.capacity.cpu, 10),
+                  memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
+                  gpu: Number(node.status.allocatable['nvidia.com/gpu']),
+                },
               };
             }
-            nodePool[nodePoolName].node[node.metadata.name] = {
-              capacity: {
-                cpu: node.status.capacity.cpu,
-                memory: node.status.capacity.memory,
-                gpu: node.status.capacity['nvidia.com/gpu'],
-              },
-              allocatable: {
-                cpu: node.status.allocatable.cpu,
-                memory: node.status.allocatable.memory,
-                gpu: node.status.allocatable['nvidia.com/gpu'],
-              },
-            };
           }
           resolve(nodePool);
         } catch (_) {
