@@ -2,21 +2,20 @@ import * as k8s from '@kubernetes/client-node';
 import * as request from 'request';
 import { Base64 } from 'js-base64';
 
-export type HwSpec = {
-  cpu: string;
+export type TypeHwSpec = {
+  cpu: number; // 'm'
   gpu: number;
-  memory: string;
+  memory: number; // 'Mi'
 };
 
-export type ContainerSpec = {
-  image: string,
-  hwSpec: HwSpec,
-  env?: Object,
-  ports?: number[],
-
+export type TypeContainerSpec = {
+  imagePath: string, // DOCKER IMAGE URL
+  hwSpec: TypeHwSpec,
+  env?: Object, // { ENV_NAME: ENV_VALUE }
+  ports?: number[], // Internal Port List
 }
 
-export type StorageSpecs = {
+export type TypeStorageSpecs = {
   [storageId: string]: {
     mountPath: string,
     subPath?: string,
@@ -24,51 +23,77 @@ export type StorageSpecs = {
   }
 }
 
-export type PhaseStorage = 'Available' | 'Bound' | 'Released' | 'Failed';
+/*
+  Available -- a free resource that is not yet bound to a claim
+  Bound     -- the volume is bound to a claim
+  Released  -- the claim has been deleted, but the resource is not yet reclaimed by the cluster
+  Failed    -- the volume has failed its automatic reclamation
+*/
+export type TypeStorageStatus = 'Available' | 'Bound' | 'Released' | 'Failed';
 
-export type PhaseList = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
-export type ConditionType = 'Initialized' | 'Ready' | 'ContainersReady' | 'PodScheduled';
+/*
+  Pending --  The Pod has been accepted by the Kubernetes cluster,
+              but one or more of the containers has not been set up and made ready to run.
+              This includes time a Pod spends waiting to be scheduled as well as
+              the time spent downloading container images over the network.
+  Running --  The Pod has been bound to a node, and all of the containers have been created.
+              At least one container is still running, or is in the process of
+              starting or restarting.
+              Succeeded All containers in the Pod have terminated in success,
+              and will not be restarted.
+  Failed  --  All containers in the Pod have terminated,
+              and at least one container has terminated in failure.
+              That is, the container either exited with non-zero status or
+              was terminated by the system.
+  Unknown --  For some reason the state of the Pod could not be obtained.
+              This phase typically occurs due to an error in communicating
+              with the node where the Pod should be running.
+*/
+export type TypePodPhase = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | 'Unknown';
 
-export type PodInfo = {
-  containerId: string,
-  type: string,
-  podInfo: {
-    podName: string,
-    namespaceId: string,
-    status: {
-      phase: PhaseList,
-      message?: string
-      startTime?: string
-      condition: {
-        type: ConditionType,
-        status: boolean,
-        resson?: string,
-        message?: string,
-      }
+/*
+  PodScheduled    -- the Pod has been scheduled to a node.
+  ContainersReady -- all containers in the Pod are ready.
+  Initialized     -- all init containers have started successfully.
+  Ready           -- the Pod is able to serve requests and should be added to
+                     the load balancing pools of all matching Services.
+*/
+export type TypeContainerCondition = 'Initialized' | 'Ready' | 'ContainersReady' | 'PodScheduled';
+
+export type TypePodInfo = {
+  podName: string,
+  namespaceId: string,
+  status: {
+    phase: TypePodPhase,
+    message?: string
+    startTime?: string
+    condition: {
+      type: TypeContainerCondition,
+      status: boolean,
+      reason?: string,
+      message?: string,
     }
   }
 }
 
-export type NodeInfo = {
+export type TypeNodeInfo = {
   labels: { [key: string]: string},
   name: string,
   osImage: string,
   capacity: {
-    cpu: string,
-    memory: string,
-    gpu?: string,
+    cpu: number,
+    memory: number,
+    gpu: number,
   },
   allocatable: {
-    cpu: string,
-    memory: string,
-    gpu?: string,
+    cpu: number,
+    memory: number,
+    gpu: number,
   },
 }
 
-export type storageInfo = {
-  type: string,
-  storageId: string,
-  status: PhaseStorage
+export type TypeStorageInfo = {
+  status: TypeStorageStatus,
   claim: {
     name: string,
     namespaceId: string,
@@ -82,6 +107,7 @@ export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.Kubernetes
   kubeJson.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'] = JSON.stringify(kubeJson);
 
   try {
+    // If it already exists, modify
     await client.read(kubeJson);
     const response = await client.patch(kubeJson);
     return response.body;
@@ -100,14 +126,13 @@ export async function createNamespace(kubeConfig: k8s.KubeConfig, name: string) 
       name,
     },
   };
-
   const result = await apply(kubeConfig, templateJson);
   return result;
 }
 
 export async function createDeployment(
-  kubeConfig: k8s.KubeConfig, name: string, namespace: string, containerSpec: ContainerSpec,
-  storageSpecs?: StorageSpecs, imagePullSecretName?: string,
+  kubeConfig: k8s.KubeConfig, name: string, namespace: string, containerSpec: TypeContainerSpec,
+  storageSpecs?: TypeStorageSpecs, imagePullSecretName?: string,
   labels?: {[key: string]: string}, nodePoolLabel?: Object, replicas?: number,
 ) {
   const templateJson = {
@@ -127,7 +152,7 @@ export async function createDeployment(
           nodeSelector: nodePoolLabel || {},
           containers: [
             {
-              image: containerSpec.image,
+              image: containerSpec.imagePath,
               imagePullPolicy: 'Always',
               name,
               ports: [] as Object[],
@@ -135,14 +160,14 @@ export async function createDeployment(
               env: [] as Object[],
               resources: {
                 requests: {
-                  cpu: containerSpec.hwSpec.cpu,
-                  memory: containerSpec.hwSpec.memory,
-                  'nvidia.com/gpu': containerSpec.hwSpec.gpu,
+                  cpu: `${containerSpec.hwSpec.cpu}m`,
+                  memory: `${containerSpec.hwSpec.memory}Mi`,
+                  'nvidia.com/gpu': String(containerSpec.hwSpec.gpu),
                 },
                 limits: {
                   cpu: containerSpec.hwSpec.cpu,
                   memory: containerSpec.hwSpec.memory,
-                  'nvidia.com/gpu': containerSpec.hwSpec.gpu,
+                  'nvidia.com/gpu': String(containerSpec.hwSpec.gpu),
                 },
               },
             },
@@ -179,6 +204,7 @@ export async function createDeployment(
 
   if (storageSpecs) {
     for (const storageId of Object.keys(storageSpecs)) {
+      // Mount Secret.
       if (storageSpecs[storageId].isSecret) {
         templateJson.spec.template.spec.volumes.push({
           name: storageId,
@@ -192,6 +218,7 @@ export async function createDeployment(
           subPath: storageSpecs[storageId].subPath,
         })));
       } else {
+        // Mount PVC
         templateJson.spec.template.spec.volumes.push({
           name: `${storageId}-ps`,
           persistentVolumeClaim: { claimName: `pv-${storageId}-claim` },
@@ -485,7 +512,11 @@ export async function getNodesStatus(
   });
 }
 
-export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: PodInfo) => void) {
+export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: {
+  podInfo: TypePodInfo,
+  type: string,
+  containerId: string,
+}) => void) {
   const watch = new k8s.Watch(kubeConfig);
   await watch.watch('/api/v1/pods', {},
     (type, apiObj, _) => {
@@ -519,7 +550,7 @@ export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: Pod
 }
 
 export async function watchNodes(
-  kubeConfig: k8s.KubeConfig, callback: (data: NodeInfo) => void,
+  kubeConfig: k8s.KubeConfig, callback: (data: TypeNodeInfo) => void,
 ) {
   const watch = new k8s.Watch(kubeConfig);
   await watch.watch('/api/v1/nodes', {},
@@ -531,14 +562,14 @@ export async function watchNodes(
           name: apiObj.metadata.name,
           osImage: apiObj.status.nodeInfo.osImage,
           capacity: {
-            cpu: apiObj.status.capacity.cpu,
-            memory: apiObj.status.capacity.memory,
-            gpu: apiObj.status.capacity['nvidia.com/gpu'],
+            cpu: parseInt(apiObj.status.capacity.cpu, 10),
+            memory: Math.round(parseInt(apiObj.status.capacity.memory, 10) / 1000),
+            gpu: Number(apiObj.status.capacity['nvidia.com/gpu']),
           },
           allocatable: {
-            cpu: apiObj.status.allocatable.cpu,
-            memory: apiObj.status.allocatable.memory,
-            gpu: apiObj.status.allocatable['nvidia.com/gpu'],
+            cpu: parseInt(apiObj.status.capacity.cpu, 10),
+            memory: Math.round(parseInt(apiObj.status.capacity.memory, 10) / 1000),
+            gpu: Number(apiObj.status.allocatable['nvidia.com/gpu']),
           },
         };
         callback(data);
@@ -548,7 +579,7 @@ export async function watchNodes(
 }
 
 export async function watchStorage(
-  kubeConfig: k8s.KubeConfig, callback: (data: storageInfo) => void,
+  kubeConfig: k8s.KubeConfig, callback: (data: TypeStorageInfo) => void,
 ) {
   const watch = new k8s.Watch(kubeConfig);
   await watch.watch('/api/v1/persistentvolumes', {},
@@ -557,7 +588,7 @@ export async function watchStorage(
       const data = {
         type,
         storageId: apiObj.metadata.labels.app,
-        status: apiObj.status.phase as PhaseStorage,
+        status: apiObj.status.phase as TypeStorageStatus,
         claim: {
           name: apiObj.spec.claimRef.name,
           namespaceId: apiObj.spec.claimRef.namespace,
