@@ -491,10 +491,10 @@ export async function getNodesStatus(
                 nodePool[nodePoolName] = {
                   gpuType,
                   osImage: node.status.nodeInfo.osImage,
-                  node: {},
+                  nodes: {},
                 };
               }
-              nodePool[nodePoolName].node[node.metadata.name] = {
+              nodePool[nodePoolName].nodes[node.metadata.name] = {
                 capacity: {
                   cpu: parseInt(node.status.capacity.cpu, 10),
                   memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
