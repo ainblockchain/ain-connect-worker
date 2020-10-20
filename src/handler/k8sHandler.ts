@@ -135,8 +135,12 @@ export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.Kubernetes
     const response = await client.patch(kubeJson);
     return response.body;
   } catch (e) {
-    const response = await client.create(kubeJson);
-    return response.body;
+    try {
+      const response = await client.create(kubeJson);
+      return response.body;
+    } catch (error) {
+      throw error.body;
+    }
   }
 }
 
@@ -188,8 +192,8 @@ export async function createDeployment(
                   'nvidia.com/gpu': String(containerSpec.hwSpec.gpu),
                 },
                 limits: {
-                  cpu: containerSpec.hwSpec.cpu,
-                  memory: containerSpec.hwSpec.memory,
+                  cpu: `${containerSpec.hwSpec.cpu}m`,
+                  memory: `${containerSpec.hwSpec.memory}Mi`,
                   'nvidia.com/gpu': String(containerSpec.hwSpec.gpu),
                 },
               },
@@ -254,7 +258,6 @@ export async function createDeployment(
       }
     }
   }
-
   const result = await apply(kubeConfig, templateJson);
   return result;
 }
