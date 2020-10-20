@@ -51,17 +51,19 @@ export default class Worker {
   // @TODO Docker Handler
 
   // SDK Handler
-  public createNamespace = async (_: any) => ({ statusCode: 0 })
+  public createNamespace = async (_: any) => ({ })
 
-  public deleteNamespace = async (_: any) => ({ statusCode: 0 })
+  public deleteNamespace = async (_: any) => ({ })
 
-  public deploy = async (_: any) => ({ statusCode: 0 })
+  public deploy = async (_: any) => ({ })
 
-  public redeploy = async (_: any) => ({ statusCode: 0 })
+  public redeploy = async (_: any) => ({ })
 
-  public undeploy = async (_: any) => ({ statusCode: 0 })
+  public undeploy = async (_: any) => ({ })
 
-  public createStorage = async (_: any) => ({ statusCode: 0 })
+  public createStorage = async (_: any) => ({ })
 
-  public deleteStorage = async (_: any) => ({ statusCode: 0 })
+  public deleteStorage = async (_: any) => ({ })
+
+  public createSecret = async (_: any) => ({ })
 }

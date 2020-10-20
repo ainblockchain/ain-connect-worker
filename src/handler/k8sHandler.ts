@@ -16,11 +16,12 @@ export type ContainerSpec = {
 
 }
 
-export type StorageSpec = {
-  name: string,
-  mountPath: string,
-  subPath?: string,
-  isSecret?: boolean,
+export type StorageSpecs = {
+  [storageId: string]: {
+    mountPath: string,
+    subPath?: string,
+    isSecret?: boolean,
+  }
 }
 
 export type PhaseStorage = 'Available' | 'Bound' | 'Released' | 'Failed';
@@ -30,17 +31,20 @@ export type ConditionType = 'Initialized' | 'Ready' | 'ContainersReady' | 'PodSc
 
 export type PodInfo = {
   containerId: string,
-  podName: string,
-  namespaceId: string,
-  status: {
-    phase: PhaseList,
-    message?: string
-    startTime?: string
-    condition: {
-      type: ConditionType,
-      status: boolean,
-      resson?: string,
-      message?: string,
+  type: string,
+  podInfo: {
+    podName: string,
+    namespaceId: string,
+    status: {
+      phase: PhaseList,
+      message?: string
+      startTime?: string
+      condition: {
+        type: ConditionType,
+        status: boolean,
+        resson?: string,
+        message?: string,
+      }
     }
   }
 }
@@ -62,8 +66,9 @@ export type NodeInfo = {
 }
 
 export type storageInfo = {
-  name: string,
-  phase: PhaseStorage,
+  type: string,
+  storageId: string,
+  status: PhaseStorage
   claim: {
     name: string,
     namespaceId: string,
@@ -102,7 +107,7 @@ export async function createNamespace(kubeConfig: k8s.KubeConfig, name: string) 
 
 export async function createDeployment(
   kubeConfig: k8s.KubeConfig, name: string, namespace: string, containerSpec: ContainerSpec,
-  storageSpecList?: StorageSpec[], imagePullSecretName?: string,
+  storageSpecs?: StorageSpecs, imagePullSecretName?: string,
   labels?: {[key: string]: string}, nodePoolLabel?: Object, replicas?: number,
 ) {
   const templateJson = {
@@ -172,28 +177,29 @@ export async function createDeployment(
     });
   }
 
-  if (storageSpecList) {
-    for (const storageSpec of storageSpecList) {
-      if (storageSpec.isSecret) {
+  if (storageSpecs) {
+    for (const storageId of Object.keys(storageSpecs)) {
+      if (storageSpecs[storageId].isSecret) {
         templateJson.spec.template.spec.volumes.push({
-          name: storageSpec.name,
+          name: storageId,
           secret: {
-            secretName: storageSpec.name,
+            secretName: storageId,
           },
         });
         templateJson.spec.template.spec.containers[0].volumeMounts.push(JSON.parse(JSON.stringify({
-          name: storageSpec.name,
-          mountPath: storageSpec.mountPath,
+          name: storageId,
+          mountPath: storageSpecs[storageId].mountPath,
+          subPath: storageSpecs[storageId].subPath,
         })));
       } else {
         templateJson.spec.template.spec.volumes.push({
-          name: `${storageSpec.name}-ps`,
-          persistentVolumeClaim: { claimName: `pv-${storageSpec.name}-claim` },
+          name: `${storageId}-ps`,
+          persistentVolumeClaim: { claimName: `pv-${storageId}-claim` },
         });
         templateJson.spec.template.spec.containers[0].volumeMounts.push(JSON.parse(JSON.stringify({
-          name: `${storageSpec.name}-ps`,
-          mountPath: storageSpec.mountPath,
-          subPath: storageSpec.subPath,
+          name: `${storageId}-ps`,
+          mountPath: storageSpecs[storageId].mountPath,
+          subPath: storageSpecs[storageId].subPath,
         })));
       }
     }
@@ -482,13 +488,10 @@ export async function getNodesStatus(
 export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: PodInfo) => void) {
   const watch = new k8s.Watch(kubeConfig);
   await watch.watch('/api/v1/pods', {},
-    // callback is called for each received object.
     (type, apiObj, _) => {
       const { namespace } = apiObj.metadata;
-      if (namespace !== 'kube-system' && namespace !== 'istio-system'
-        && (type === 'ADDED' || type === 'MODIFIED')) {
-        const data = {
-          containerId: apiObj.metadata.labels.app,
+      if (namespace !== 'kube-system' && namespace !== 'istio-system') {
+        const podInfo = {
           podName: apiObj.metadata.name,
           namespaceId: namespace,
           status: {
@@ -503,7 +506,13 @@ export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: Pod
             },
           },
         };
-        callback(data);
+        if (apiObj.metadata.labels.app) {
+          callback({
+            containerId: apiObj.metadata.labels.app,
+            type,
+            podInfo,
+          });
+        }
       }
     },
     (_) => {});
@@ -546,14 +555,17 @@ export async function watchStorage(
     // callback is called for each received object.
     (type, apiObj, _) => {
       const data = {
-        name: apiObj.metadata.name,
-        phase: apiObj.status.phase,
+        type,
+        storageId: apiObj.metadata.labels.app,
+        status: apiObj.status.phase as PhaseStorage,
         claim: {
           name: apiObj.spec.claimRef.name,
           namespaceId: apiObj.spec.claimRef.namespace,
         },
       };
-      callback(data);
+      if (apiObj.metadata.labels.app) {
+        callback(data);
+      }
     },
     (_) => {});
 }
