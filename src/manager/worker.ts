@@ -4,17 +4,31 @@ export default class Worker {
   // K8s Handler
   public apply = k8s.apply
 
-  public getPodInfo = k8s.getPodInfo
+  // API:Get Info
+  public k8sGetPodInfo = k8s.getPodInfo
 
-  public getNamespaceJson = k8s.getNamespaceJson
+  public k8sGetNodesStatus = k8s.getNodesStatus;
 
-  public getDeploymentJson = k8s.getDeploymentJson
+  public k8sWatchNodes = k8s.watchNodes
 
-  public getServiceJson = k8s.getServiceJson
+  public k8sWatchPods = k8s.watchPods
 
-  public getVirtualServiceJson = k8s.getVirtualServiceJson
+  public k8sWatchStorage = k8s.watchStorage
 
-  public getStorageJson = k8s.getStorageJson
+  // API:Create
+  public k8sCreateNamespace = k8s.createNamespace
+
+  public k8sCreateDeployment = k8s.createDeployment
+
+  public k8sCreateService = k8s.createService
+
+  public k8sCreateVirtualService = k8s.creteaVirtualService
+
+  public k8sCreateStrorage = k8s.createStorage
+
+  public k8sCreateDockerSecret = k8s.createDockerSecret
+
+  public k8sCreateSecret = k8s.createSecret
 
   public k8sDeleteNamespace = k8s.deleteNamespace
 
@@ -26,24 +40,30 @@ export default class Worker {
 
   public k8sDeleteStorage = k8s.deleteStorage
 
-  public createDockerSecret = k8s.createDockerSecret
+  public k8sExistDeployment = k8s.existDeployment
+
+  public k8sExistSecret = k8s.existSecret
+
+  public k8sExistStorage = k8s.existStorage
+
+  public k8sPatchDeployment = k8s.patchDeployment
 
   // @TODO Docker Handler
 
   // SDK Handler
-  public createNamespace = async (_: any) => ({ statusCode: 0 })
+  public createNamespace = async (_: any) => ({ })
 
-  public deleteNamespace = async (_: any) => ({ statusCode: 0 })
+  public deleteNamespace = async (_: any) => ({ })
 
-  public deploy = async (_: any) => ({ statusCode: 0 })
+  public deploy = async (_: any) => ({ })
 
-  public redeploy = async (_: any) => ({ statusCode: 0 })
+  public redeploy = async (_: any) => ({ })
 
-  public undeploy = async (_: any) => ({ statusCode: 0 })
+  public undeploy = async (_: any) => ({ })
 
-  public createStorage = async (_: any) => ({ statusCode: 0 })
+  public createStorage = async (_: any) => ({ })
 
-  public deleteStorage = async (_: any) => ({ statusCode: 0 })
+  public deleteStorage = async (_: any) => ({ })
 
-  public getContainerInfo = async (_: any) => ({ statusCode: 0 })
+  public createSecret = async (_: any) => ({ })
 }
