@@ -520,16 +520,22 @@ export async function getNodesStatus(
               }
               nodePool[nodePoolName].nodes[node.metadata.name] = {
                 capacity: {
-                  cpu: parseInt(node.status.capacity.cpu, 10) * 1000,
+                  cpu: parseInt(node.status.capacity.cpu, 10),
                   memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
                   gpu: Number(node.status.capacity['nvidia.com/gpu']) || 0,
                 },
                 allocatable: {
-                  cpu: parseInt(node.status.allocatable.cpu, 10) * 1000,
+                  cpu: parseInt(node.status.allocatable.cpu, 10),
                   memory: Math.round(parseInt(node.status.allocatable.memory, 10) / 1000),
                   gpu: Number(node.status.allocatable['nvidia.com/gpu']) || 0,
                 },
               };
+              if (!node.status.capacity.cpu.includes('m')) {
+                nodePool[nodePoolName].nodes[node.metadata.name].capacity.cpu *= 1000;
+              }
+              if (!node.status.allocatable.cpu.includes('m')) {
+                nodePool[nodePoolName].nodes[node.metadata.name].allocatable.cpu *= 1000;
+              }
             }
           }
           resolve(nodePool);
@@ -600,6 +606,12 @@ export async function watchNodes(
             gpu: Number(apiObj.status.allocatable['nvidia.com/gpu']) || 0,
           },
         };
+        if (!apiObj.status.capacity.cpu.includes('m')) {
+          data.capacity.cpu *= 1000;
+        }
+        if (!apiObj.status.allocatable.cpu.includes('m')) {
+          data.allocatable.cpu *= 1000;
+        }
         callback(data);
       }
     },
