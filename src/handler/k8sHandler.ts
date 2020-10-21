@@ -522,12 +522,12 @@ export async function getNodesStatus(
                 capacity: {
                   cpu: parseInt(node.status.capacity.cpu, 10) * 1000,
                   memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
-                  gpu: Number(node.status.capacity['nvidia.com/gpu']),
+                  gpu: Number(node.status.capacity['nvidia.com/gpu']) || 0,
                 },
                 allocatable: {
                   cpu: parseInt(node.status.capacity.cpu, 10) * 1000,
                   memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
-                  gpu: Number(node.status.allocatable['nvidia.com/gpu']),
+                  gpu: Number(node.status.allocatable['nvidia.com/gpu']) || 0,
                 },
               };
             }
@@ -592,12 +592,12 @@ export async function watchNodes(
           capacity: {
             cpu: parseInt(apiObj.status.capacity.cpu, 10),
             memory: Math.round(parseInt(apiObj.status.capacity.memory, 10) / 1000),
-            gpu: Number(apiObj.status.capacity['nvidia.com/gpu']),
+            gpu: Number(apiObj.status.capacity['nvidia.com/gpu']) || 0,
           },
           allocatable: {
             cpu: parseInt(apiObj.status.capacity.cpu, 10),
             memory: Math.round(parseInt(apiObj.status.capacity.memory, 10) / 1000),
-            gpu: Number(apiObj.status.allocatable['nvidia.com/gpu']),
+            gpu: Number(apiObj.status.allocatable['nvidia.com/gpu']) || 0,
           },
         };
         callback(data);
