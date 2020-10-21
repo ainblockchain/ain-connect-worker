@@ -16,6 +16,8 @@ export default class Worker {
   public k8sWatchStorage = k8s.watchStorage
 
   // API:Create
+  public k8sCreateIstioGateway = k8s.createIstioGateway
+
   public k8sCreateNamespace = k8s.createNamespace
 
   public k8sCreateDeployment = k8s.createDeployment
