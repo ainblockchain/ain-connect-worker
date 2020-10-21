@@ -123,6 +123,19 @@ export type TypeStorageInfo = {
   },
 }
 
+// cpu "m"
+export function convertUnitCpu(k8sUnit: string) {
+  if (k8sUnit.includes('m')) return parseInt(k8sUnit, 10);
+  return parseInt(k8sUnit, 10) * 1000;
+}
+
+// Memory "Mi"
+export function convertUnitMemory(k8sUnit: string) {
+  if (k8sUnit.includes('Ki') || k8sUnit.includes('K')) return Math.round(parseInt(k8sUnit, 10) / 1000);
+  if (k8sUnit.includes('Gi') || k8sUnit.includes('G')) return parseInt(k8sUnit, 10) * 1000;
+  return parseInt(k8sUnit, 10);
+}
+
 export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.KubernetesObject) {
   const client = k8s.KubernetesObjectApi.makeApiClient(kubeConfig);
   kubeJson.metadata = kubeJson.metadata || {};
@@ -145,6 +158,41 @@ export async function apply(kubeConfig: k8s.KubeConfig, kubeJson: k8s.Kubernetes
 }
 
 // API:CREATE
+export async function createIstioGateway(
+  kubeConfig: k8s.KubeConfig, name: string, endpoint: string,
+) {
+  const templateJson = {
+    apiVersion: 'networking.istio.io/v1alpha3',
+    kind: 'Gateway',
+    metadata: {
+      name,
+      namespace: 'istio-system',
+      labels: {
+        templateVersion: 'v2-2',
+      },
+    },
+    spec: {
+      selector: {
+        istio: 'ingressgateway',
+      },
+      servers: [
+        {
+          port: {
+            number: 80,
+            name: 'http',
+            protocol: 'HTTP',
+          },
+          hosts: [
+            endpoint,
+          ],
+        },
+      ],
+    },
+  };
+  const result = await apply(kubeConfig, templateJson);
+  return result;
+}
+
 export async function createNamespace(kubeConfig: k8s.KubeConfig, name: string) {
   const templateJson = {
     apiVersion: 'v1',
@@ -520,22 +568,16 @@ export async function getNodesStatus(
               }
               nodePool[nodePoolName].nodes[node.metadata.name] = {
                 capacity: {
-                  cpu: parseInt(node.status.capacity.cpu, 10),
-                  memory: Math.round(parseInt(node.status.capacity.memory, 10) / 1000),
+                  cpu: convertUnitCpu(node.status.capacity.cpu),
+                  memory: convertUnitMemory(node.status.capacity.memory),
                   gpu: Number(node.status.capacity['nvidia.com/gpu']) || 0,
                 },
                 allocatable: {
-                  cpu: parseInt(node.status.allocatable.cpu, 10),
-                  memory: Math.round(parseInt(node.status.allocatable.memory, 10) / 1000),
+                  cpu: convertUnitCpu(node.status.allocatable.cpu),
+                  memory: convertUnitMemory(node.status.allocatable.memory),
                   gpu: Number(node.status.allocatable['nvidia.com/gpu']) || 0,
                 },
               };
-              if (!node.status.capacity.cpu.includes('m')) {
-                nodePool[nodePoolName].nodes[node.metadata.name].capacity.cpu *= 1000;
-              }
-              if (!node.status.allocatable.cpu.includes('m')) {
-                nodePool[nodePoolName].nodes[node.metadata.name].allocatable.cpu *= 1000;
-              }
             }
           }
           resolve(nodePool);
@@ -547,6 +589,8 @@ export async function getNodesStatus(
 }
 
 export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: {
+  limits: TypeHwSpec,
+  nodeName: string,
   podInfo: TypePodInfo,
   type: string,
   containerId: string,
@@ -554,31 +598,47 @@ export async function watchPods(kubeConfig: k8s.KubeConfig, callback: (data: {
   const watch = new k8s.Watch(kubeConfig);
   await watch.watch('/api/v1/pods', {},
     (type, apiObj, _) => {
-      const { namespace } = apiObj.metadata;
-      if (namespace !== 'kube-system' && namespace !== 'istio-system') {
-        const podInfo = {
-          podName: apiObj.metadata.name,
-          namespaceId: namespace,
-          status: {
-            phase: apiObj.status.phase,
-            message: apiObj.status.message,
-            startTime: apiObj.status.startTime,
-            condition: {
-              type: apiObj.status.conditions[0].type,
-              status: apiObj.status.conditions[0].status,
-              reason: apiObj.status.conditions[0].reason,
-              message: apiObj.status.conditions[0].message,
-            },
-          },
-        };
-        if (apiObj.metadata.labels.app) {
-          callback({
-            containerId: apiObj.metadata.labels.app,
-            type,
-            podInfo,
-          });
+      const { containers } = apiObj.spec;
+      const limits = {
+        cpu: 0,
+        memory: 0,
+        gpu: 0,
+      };
+      for (const container of containers) {
+        if (container.resources && container.resources.limits) {
+          if (container.resources.limits.cpu) {
+            limits.cpu += convertUnitCpu(container.resources.limits.cpu);
+          }
+          if (container.resources.limits.memory) {
+            limits.memory += convertUnitMemory(container.resources.limits.memory);
+          }
+          if (container.resources.limits['nvidia.com/gpu']) {
+            limits.gpu += parseInt(container.resources.limits['nvidia.com/gpu'], 10);
+          }
         }
       }
+      const podInfo = {
+        podName: apiObj.metadata.name,
+        namespaceId: apiObj.metadata.namespace,
+        status: {
+          phase: apiObj.status.phase,
+          message: apiObj.status.message,
+          startTime: apiObj.status.startTime,
+          condition: {
+            type: apiObj.status.conditions[0].type,
+            status: apiObj.status.conditions[0].status,
+            reason: apiObj.status.conditions[0].reason,
+            message: apiObj.status.conditions[0].message,
+          },
+        },
+      };
+      callback({
+        nodeName: apiObj.spec.nodeName,
+        limits,
+        containerId: apiObj.metadata.labels.app,
+        type,
+        podInfo,
+      });
     },
     (_) => {});
 }
@@ -596,22 +656,16 @@ export async function watchNodes(
           name: apiObj.metadata.name,
           osImage: apiObj.status.nodeInfo.osImage,
           capacity: {
-            cpu: parseInt(apiObj.status.capacity.cpu, 10),
-            memory: Math.round(parseInt(apiObj.status.capacity.memory, 10) / 1000),
+            cpu: convertUnitCpu(apiObj.status.capacity.cpu),
+            memory: convertUnitMemory(apiObj.status.capacity.memory),
             gpu: Number(apiObj.status.capacity['nvidia.com/gpu']) || 0,
           },
           allocatable: {
-            cpu: parseInt(apiObj.status.allocatable.cpu, 10),
-            memory: Math.round(parseInt(apiObj.status.allocatable.memory, 10) / 1000),
+            cpu: convertUnitCpu(apiObj.status.allocatable.cpu),
+            memory: convertUnitMemory(apiObj.status.allocatable.memory),
             gpu: Number(apiObj.status.allocatable['nvidia.com/gpu']) || 0,
           },
         };
-        if (!apiObj.status.capacity.cpu.includes('m')) {
-          data.capacity.cpu *= 1000;
-        }
-        if (!apiObj.status.allocatable.cpu.includes('m')) {
-          data.allocatable.cpu *= 1000;
-        }
         callback(data);
       }
     },
