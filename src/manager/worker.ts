@@ -2,7 +2,7 @@ import K8sUtil from '../util/k8s';
 
 export default class Worker {
   // K8s Handler
-  private k8sUtil: K8sUtil;
+  protected k8sUtil: K8sUtil;
 
   constructor(configPath: string) {
     this.k8sUtil = new K8sUtil(configPath);
