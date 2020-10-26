@@ -226,7 +226,7 @@ describe('K8sUtil', () => {
     const gateway = 'worker.istio-system';
     const labels = { test: 'yes' };
 
-    const result = await k8sUtil.creteaVirtualService(
+    const result = await k8sUtil.createVirtualService(
       name, namespace, endpoint, gateway, port, labels,
     );
     const answer = {
