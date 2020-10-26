@@ -27,6 +27,41 @@ export default class K8sUtil {
   }
 
   /**
+   * Get K8s Config.
+  */
+  getConfig() {
+    return this.config;
+  }
+
+  /**
+   * Get K8s CoreApi.
+  */
+  getCoreApi() {
+    return this.coreApi;
+  }
+
+  /**
+   * Get K8s AppV1Api.
+  */
+  getAppV1Api() {
+    return this.appV1Api;
+  }
+
+  /**
+   * Get K8s ObjectApi.
+  */
+  getObjectApi() {
+    return this.objectApi;
+  }
+
+  /**
+   * Get K8s Server Address.
+  */
+  getServerAddr() {
+    return this.serverAddr;
+  }
+
+  /**
    * hwspec to cpu "m".
    * @params k8sUnit: k8s CPU resource Spec (ex. 1000m).
   */
@@ -532,7 +567,7 @@ export default class K8sUtil {
       namespace, undefined, undefined, undefined, undefined, `app=${name}`,
     );
     const podInfo = res.body.items[0];
-    if (podInfo?.status && podInfo?.spec) {
+    if (podInfo && podInfo.status && podInfo.spec) {
       const containerInfo = podInfo.spec.containers[0];
       const port = {};
       if (containerInfo.ports) {
