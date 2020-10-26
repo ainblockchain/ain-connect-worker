@@ -118,4 +118,9 @@ export type GatewayPort = {
   protocol: string,
 }
 
-export type Resource = 'namespace' | 'deployment' | 'service' | 'virtualService' | 'storage';
+export type Resource = 'namespace' | 'deployment' | 'service' | 'virtualService' | 'storage' | 'persistentVolumeClaim' | 'persistentVolume';
+
+export type NfsInfo = {
+  path: string, // NFS Base Path
+  server: string // NFS Address
+}

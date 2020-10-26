@@ -200,11 +200,13 @@ export default class K8sUtil {
    * @params nodePoolLabel: params for select nodePool.
    *          [if it is undefined then select from all nodepool]
    * @params replicas: Number of Pods.
+   * @params privileged: root.
   */
   async createDeployment(name: string, namespace: string,
     containerSpec: types.ContainerSpec, storageSpecs?: types.StorageSpecs,
     secretSpec?: types.SecretSpecs, imagePullSecretName?: string,
-    labels?: {[key: string]: string}, nodePoolLabel?: Object, replicas?: number) {
+    labels?: {[key: string]: string}, nodePoolLabel?: Object, replicas?: number,
+    privileged: boolean = false) {
     const templateJson = {
       apiVersion: 'apps/v1',
       kind: 'Deployment',
@@ -230,6 +232,9 @@ export default class K8sUtil {
                 ports: [] as Object[],
                 volumeMounts: [] as Object[],
                 env: [] as Object[],
+                securityContext: {
+                  privileged,
+                },
                 resources: {
                   requests: this.convertHwSpecString(containerSpec.resourceLimits),
                   limits: this.convertHwSpecString(containerSpec.resourceLimits),
@@ -388,19 +393,21 @@ export default class K8sUtil {
   }
 
   /**
-   * Create PersistentVolume and PersistentVolumeClaim about NFS.
+   * Create PersistentVolume.
    * @params name: Storage Name.
    * @params namespace: Namespace Name.
-   * @params serverIp: NFS Server IP.
-   * @params nfsPath: NFS Server Base Path.
    * @params storageGb: storageGb.
+   * @params storageClassName: k8s storageClass Name.
+   * @params accessModes: ReadWriteMany or ReadWriteOnce.
+   * @params nfsInfo: NFS Server Base Path +  NFS Server Address.
    * @params labels: labels.
   */
-  async createStorage(
-    name: string, namespace: string,
-    serverIp: string, nfsPath: string, storageGb: number, labels?: {[key: string]: string },
+  async createPersistentVolume(
+    name: string, namespace: string, storageGb: number, storageClassName: string,
+    accessModes: 'ReadWriteMany' | 'ReadWriteOnce',
+    nfsInfo?: types.NfsInfo, labels?: {[key: string]: string },
   ) {
-    const pvTemplateJson = {
+    const pvTemplateJson = JSON.parse(JSON.stringify({
       apiVersion: 'v1',
       kind: 'PersistentVolume',
       metadata: {
@@ -410,31 +417,101 @@ export default class K8sUtil {
       },
       spec: {
         capacity: { storage: `${storageGb}Gi` },
-        accessModes: ['ReadWriteMany'],
-        storageClassName: name,
-        nfs: { path: nfsPath, server: serverIp },
-        persistentVolumeReclaimPolicy: 'Retain',
+        accessModes: [accessModes],
+        storageClassName,
+        nfs: (nfsInfo) ? { ...nfsInfo } : undefined,
       },
-    };
+    }));
 
+    const result = await this.apply(pvTemplateJson);
+
+    return result;
+  }
+
+  /**
+   * Create PersistentVolumeClaim.
+   * @params name: Storage Name.
+   * @params namespace: Namespace Name.
+   * @params storageGb: storageGb.
+   * @params storageClassName: k8s storageClass Name.
+   * @params accessModes: ReadWriteMany or ReadWriteOnce.
+   * @params nfsInfo: NFS Server Base Path +  NFS Server Address.
+   * @params labels: labels.
+  */
+  async createPersistentVolumeClaim(
+    name: string, namespace: string, storageGb: number, storageClassName: string,
+    accessModes: 'ReadWriteMany' | 'ReadWriteOnce',
+    labels?: {[key: string]: string },
+  ) {
     const pvcTemplateJson = {
       apiVersion: 'v1',
       kind: 'PersistentVolumeClaim',
       metadata: {
         namespace,
         name: `pv-${name}-claim`,
-        labels: { app: name },
+        labels: { ...labels, app: name, ainConnect: 'yes' },
       },
       spec: {
-        accessModes: ['ReadWriteMany'],
-        storageClassName: name,
+        accessModes: [accessModes],
         resources: { requests: { storage: `${storageGb}Gi` } },
       },
     };
+    if (storageClassName !== '') {
+      pvcTemplateJson.spec['storageClassName'] = storageClassName;
+    }
+    const result = await this.apply(pvcTemplateJson);
+    return result;
+  }
 
-    const pvResult = await this.apply(pvTemplateJson);
-    const pvcResult = await this.apply(pvcTemplateJson);
+  /**
+   * Create PersistentVolume and PersistentVolumeClaim.
+   * @params name: Storage Name.
+   * @params namespace: Namespace Name.
+   * @params storageGb: storageGb.
+   * @params storageClassName: k8s storageClass Name.
+   * @params accessModes: ReadWriteMany or ReadWriteOnce.
+   * @params nfsInfo: NFS Server Base Path +  NFS Server Address.
+   * @params labels: labels.
+  */
+  async createStorage(
+    name: string, namespace: string, storageGb: number, storageClassName: string,
+    accessModes: 'ReadWriteMany' | 'ReadWriteOnce',
+    nfsInfo?: types.NfsInfo, labels?: {[key: string]: string },
+  ) {
+    const pvResult = await this.createPersistentVolume(
+      name, namespace, storageGb, storageClassName, accessModes, nfsInfo, labels,
+    );
+    const pvcResult = await this.createPersistentVolumeClaim(
+      name, namespace, storageGb, storageClassName, accessModes, labels,
+    );
     return { pvResult, pvcResult };
+  }
+
+  async createLocalNfsServer(name: string, capacity: number,
+    resourceLimits: types.HwSpec, labels?: { [key: string]: string }, nodePoolLabel?: Object) {
+    const nfsName = `nfs-${name}`;
+
+    await this.createPersistentVolumeClaim(nfsName, 'default',
+      capacity, '', 'ReadWriteOnce', labels);
+
+    await this.createDeployment(nfsName, 'default', {
+      imagePath: 'k8s.gcr.io/volume-nfs:0.8',
+      ports: [2049, 111, 20048],
+      resourceLimits,
+    }, {
+      [nfsName]: {
+        mountPath: '/exports',
+      },
+    }, undefined, undefined, labels, nodePoolLabel, 1, true);
+
+    await this.createService(nfsName, 'default', [2049, 111, 20048], labels);
+  }
+
+  async deleteLocalNfsServer(name: string) {
+    const nfsName = `nfs-${name}`;
+    await this.deleteResource('service', nfsName, 'default');
+    await this.deleteResource('deployment', nfsName, 'default');
+    await this.deleteResource('persistentVolumeClaim', nfsName, 'default');
   }
 
   /**
@@ -549,6 +626,10 @@ export default class K8sUtil {
       await this.coreApi.deleteNamespacedService(`${name}-lb`, namespace);
     } else if (type === 'virtualService' && namespace) {
       await this.deleteVirtualService(name, namespace);
+    } else if (type === 'persistentVolume') {
+      await this.coreApi.deletePersistentVolume(`pv-${name}`);
+    } else if (type === 'persistentVolumeClaim' && namespace) {
+      await this.coreApi.deleteNamespacedPersistentVolumeClaim(`pv-${name}-claim`, namespace);
     } else if (type === 'storage' && namespace) {
       await this.coreApi.deleteNamespacedPersistentVolumeClaim(`pv-${name}-claim`, namespace);
       await this.coreApi.deletePersistentVolume(`pv-${name}`);

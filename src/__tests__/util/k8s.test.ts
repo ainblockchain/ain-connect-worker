@@ -139,6 +139,9 @@ describe('K8sUtil', () => {
                 image: containerSpec.imagePath,
                 imagePullPolicy: 'Always',
                 name,
+                securityContext: {
+                  privileged: false,
+                },
                 ports: [{
                   containerPort: containerSpec.ports[0],
                 }],
@@ -275,7 +278,7 @@ describe('K8sUtil', () => {
     const labels = { test: 'yes' };
 
     const result = await k8sUtil.createStorage(
-      name, namespace, serverIp, nfsPath, storageGb, labels,
+      name, namespace, storageGb, name, 'ReadWriteMany', { server: serverIp, path: nfsPath }, labels,
     );
     const answerPv = {
       apiVersion: 'v1',
@@ -290,7 +293,6 @@ describe('K8sUtil', () => {
         accessModes: ['ReadWriteMany'],
         storageClassName: name,
         nfs: { path: nfsPath, server: serverIp },
-        persistentVolumeReclaimPolicy: 'Retain',
       },
     };
     const answerPvc = {
@@ -299,7 +301,7 @@ describe('K8sUtil', () => {
       metadata: {
         namespace,
         name: `pv-${name}-claim`,
-        labels: { app: name },
+        labels: { ...labels, app: name, ainConnect: 'yes' },
       },
       spec: {
         accessModes: ['ReadWriteMany'],
