@@ -344,7 +344,7 @@ export default class K8sUtil {
    * @params port: It is Service extenal Port.
    * @params labels: labels.
   */
-  async creteaVirtualService(
+  async createVirtualService(
     name: string, namespace: string,
     endpoint: string, gateway: string, port: number, labels?: {[key: string]: string },
   ) {

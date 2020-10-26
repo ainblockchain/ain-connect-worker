@@ -11,6 +11,7 @@ export default class Worker {
   // SDK Handler
   public createNamespace = async (_: any) => {
     await this.k8sUtil.createNamespace(_);
+    return { namespaceId: _ };
   }
 
   public deleteNamespace = async (_: any) => ({ })
