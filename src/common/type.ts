@@ -95,7 +95,7 @@ export type PodInfo = {
 
 export type NodePool = {
   [nodePoolName: string]: {
-    gpu: string,
+    gpuType: string,
     osImage: string,
     nodes: {
       [nodeId: string]: HwStatus
