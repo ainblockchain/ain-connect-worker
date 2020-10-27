@@ -851,9 +851,9 @@ export default class K8sUtil {
    * existStorage
    * @params name: Storage Name.
   */
-  async existStorage(name: string) {
+  async existStorage(name: string, namespace: string) {
     try {
-      await this.coreApi.readPersistentVolume(`pv-${name}`);
+      await this.coreApi.readNamespacedPersistentVolumeClaim(`pv-${name}-claim`, namespace);
       return true;
     } catch (_) {
       return false;
