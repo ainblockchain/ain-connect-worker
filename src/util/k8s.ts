@@ -493,16 +493,19 @@ export default class K8sUtil {
    * @params capacity: storageGb.
    * @params resourceLimits: k8s resourceLimits.
    * @params storageClassName: k8s storageClass Name.
+   * @params accessModes: ReadWriteMany or ReadWriteOnce.
    * @params labels: labels.
    * @params  nodePoolLabel: params for select nodePool.
    *          [if it is undefined then select from all nodepool]
   */
   async createLocalNfsServer(name: string, capacity: number,
-    resourceLimits: types.HwSpec, labels?: { [key: string]: string }, nodePoolLabel?: Object) {
+    resourceLimits: types.HwSpec, storageClassName: string,
+    accessModes: 'ReadWriteMany' | 'ReadWriteOnce',
+    labels?: { [key: string]: string }, nodePoolLabel?: Object) {
     const nfsName = `nfs-${name}`;
 
     await this.createPersistentVolumeClaim(nfsName, 'default',
-      capacity, '', 'ReadWriteOnce', labels);
+      capacity, storageClassName, accessModes, labels);
 
     await this.createDeployment(nfsName, 'default', {
       imagePath: 'k8s.gcr.io/volume-nfs:0.8',

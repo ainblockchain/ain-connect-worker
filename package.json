@@ -1,6 +1,6 @@
 {
   "name": "@aindev/connect-worker-base",
-  "version": "0.0.68",
+  "version": "0.0.69",
   "description": "AIN Connect Worker Base",
   "repository": {
     "type": "git",
