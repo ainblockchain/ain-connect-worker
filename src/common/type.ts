@@ -106,6 +106,7 @@ export type NodePool = {
 export type StorageInfo = {
   storageId: string,
   status: StorageStatus,
+  isConnectStorage: boolean,
   claim?: {
     name: string,
     namespaceId: string,

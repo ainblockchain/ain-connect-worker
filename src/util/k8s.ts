@@ -717,7 +717,7 @@ export default class K8sUtil {
             }
             resolve(nodePool);
           } catch (_) {
-            reject();
+            reject(_);
           }
         });
     });
@@ -762,7 +762,7 @@ export default class K8sUtil {
       request.get(url, opts,
         (error, _response, _body) => {
           if (error) {
-            reject();
+            reject(error);
           }
           const storageInfos = [];
           const jsonData = JSON.parse(_body);
@@ -772,6 +772,7 @@ export default class K8sUtil {
             ) {
               const storageInfo = {
                 storageId: item.metadata.labels.app,
+                isConnectStorage: !!(item.metadata.labels.ainConnect),
                 status: item.status.phase as types.StorageStatus,
                 claim: {
                   name: item.spec.claimRef.name,
@@ -798,7 +799,7 @@ export default class K8sUtil {
       request.get(url, opts,
         (error, _response, _body) => {
           if (error) {
-            reject();
+            reject(error);
           }
           const podInfos = [];
           const jsonData = JSON.parse(_body);
@@ -867,6 +868,19 @@ export default class K8sUtil {
   async existSecret(name: string, namespace: string) {
     try {
       await this.coreApi.readNamespacedSecret(name, namespace);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /**
+   * existNamespace
+   * @params name: Namespace Name.
+  */
+  async existNamespace(name: string) {
+    try {
+      await this.coreApi.readNamespace(name);
       return true;
     } catch (_) {
       return false;
@@ -971,22 +985,22 @@ export default class K8sUtil {
     const listFn = () => this.coreApi.listPodForAllNamespaces();
     const informer = k8s.makeInformer(this.config, '/api/v1/pods', listFn);
 
-    informer.on('add', (obj: k8s.V1Pod) => {
+    informer.on('add', async (obj: k8s.V1Pod) => {
       const podInfo = this.parsePodInfo(obj);
       if (podInfo) {
-        addCallback(podInfo);
+        await addCallback(podInfo);
       }
     });
-    informer.on('update', (obj: k8s.V1Pod) => {
+    informer.on('update', async (obj: k8s.V1Pod) => {
       const podInfo = this.parsePodInfo(obj);
       if (podInfo) {
-        updateCallback(podInfo);
+        await updateCallback(podInfo);
       }
     });
-    informer.on('delete', (obj: k8s.V1Pod) => {
+    informer.on('delete', async (obj: k8s.V1Pod) => {
       const podInfo = this.parsePodInfo(obj);
       if (podInfo) {
-        deleteCallback(podInfo);
+        await deleteCallback(podInfo);
       }
     });
     informer.on('error', async (err: k8s.V1Pod) => {
@@ -1009,6 +1023,7 @@ export default class K8sUtil {
     if (pv.metadata && pv.metadata.labels && pv.status && pv.spec && pv.spec.claimRef) {
       const pvInfo = {
         storageId: pv.metadata.labels.app,
+        isConnectStorage: !!(pv.metadata.labels.ainConnect),
         status: pv.status.phase as types.StorageStatus,
         claim: {
           name: pv.spec.claimRef.name as string,
@@ -1032,22 +1047,22 @@ export default class K8sUtil {
     const listFn = () => this.coreApi.listPersistentVolume();
     const informer = k8s.makeInformer(this.config, '/api/v1/persistentvolumes', listFn);
 
-    informer.on('add', (obj: k8s.V1PersistentVolume) => {
+    informer.on('add', async (obj: k8s.V1PersistentVolume) => {
       const persistentVolumeInfo = this.parsePersistentVolumeInfo(obj);
       if (persistentVolumeInfo) {
-        addCallback(persistentVolumeInfo);
+        await addCallback(persistentVolumeInfo);
       }
     });
-    informer.on('update', (obj: k8s.V1PersistentVolume) => {
+    informer.on('update', async (obj: k8s.V1PersistentVolume) => {
       const persistentVolumeInfo = this.parsePersistentVolumeInfo(obj);
       if (persistentVolumeInfo) {
-        updateCallback(persistentVolumeInfo);
+        await updateCallback(persistentVolumeInfo);
       }
     });
-    informer.on('delete', (obj: k8s.V1PersistentVolume) => {
+    informer.on('delete', async (obj: k8s.V1PersistentVolume) => {
       const persistentVolumeInfo = this.parsePersistentVolumeInfo(obj);
       if (persistentVolumeInfo) {
-        deleteCallback(persistentVolumeInfo);
+        await deleteCallback(persistentVolumeInfo);
       }
     });
     informer.on('error', async (err: k8s.V1PersistentVolume) => {
