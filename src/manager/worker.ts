@@ -9,22 +9,22 @@ export default class Worker {
   }
 
   // SDK Handler
-  public createNamespace = async (_: any) => {
+  protected createNamespace = async (_: any) => {
     await this.k8sUtil.createNamespace(_);
     return { namespaceId: _ };
   }
 
-  public deleteNamespace = async (_: any) => ({ })
+  protected deleteNamespace = async (_: any) => ({ })
 
-  public deploy = async (_: any) => ({ })
+  protected deploy = async (_: any) => ({ })
 
-  public redeploy = async (_: any) => ({ })
+  protected redeploy = async (_: any) => ({ })
 
-  public undeploy = async (_: any) => ({ })
+  protected undeploy = async (_: any) => ({ })
 
-  public createStorage = async (_: any) => ({ })
+  protected createStorage = async (_: any) => ({ })
 
-  public deleteStorage = async (_: any) => ({ })
+  protected deleteStorage = async (_: any) => ({ })
 
-  public createSecret = async (_: any) => ({ })
+  protected createSecret = async (_: any) => ({ })
 }

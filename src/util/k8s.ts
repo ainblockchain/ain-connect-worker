@@ -487,6 +487,16 @@ export default class K8sUtil {
     return { pvResult, pvcResult };
   }
 
+  /**
+   * Create NFS Server in Cluster.
+   * @params name: Storage Name.
+   * @params capacity: storageGb.
+   * @params resourceLimits: k8s resourceLimits.
+   * @params storageClassName: k8s storageClass Name.
+   * @params labels: labels.
+   * @params  nodePoolLabel: params for select nodePool.
+   *          [if it is undefined then select from all nodepool]
+  */
   async createLocalNfsServer(name: string, capacity: number,
     resourceLimits: types.HwSpec, labels?: { [key: string]: string }, nodePoolLabel?: Object) {
     const nfsName = `nfs-${name}`;
@@ -507,6 +517,10 @@ export default class K8sUtil {
     await this.createService(nfsName, 'default', [2049, 111, 20048], labels);
   }
 
+  /**
+   * Delete NFS Server in Cluster.
+   * @params name: Storage Name.
+  */
   async deleteLocalNfsServer(name: string) {
     const nfsName = `nfs-${name}`;
     await this.deleteResource('service', nfsName, 'default');
