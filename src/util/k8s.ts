@@ -497,6 +497,7 @@ export default class K8sUtil {
    * @params labels: labels.
    * @params  nodePoolLabel: params for select nodePool.
    *          [if it is undefined then select from all nodepool]
+   * @returns clusterIp
   */
   async createLocalNfsServer(name: string, capacity: number,
     resourceLimits: types.HwSpec, storageClassName: string,
@@ -517,7 +518,9 @@ export default class K8sUtil {
       },
     }, undefined, undefined, labels, nodePoolLabel, 1, true);
 
-    await this.createService(nfsName, 'default', [2049, 111, 20048], labels);
+    const result = await this.createService(nfsName, 'default', [2049, 111, 20048], labels);
+
+    return result['spec']['clusterIP'];
   }
 
   /**
