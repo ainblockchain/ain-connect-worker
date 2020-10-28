@@ -4,8 +4,8 @@ export default class Worker {
   // K8s Handler
   protected k8sUtil: K8sUtil;
 
-  constructor(configPath: string) {
-    this.k8sUtil = new K8sUtil(configPath);
+  constructor(configPath: string, test: boolean = false) {
+    this.k8sUtil = new K8sUtil(configPath, test);
   }
 
   // SDK Handler

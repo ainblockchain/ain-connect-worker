@@ -677,13 +677,14 @@ export default class K8sUtil {
         }
       }
       return {
+        podName: podInfo.metadata?.name,
         resourceStatus: podInfo.status.phase || 'Unknown',
         containerImage: containerInfo.image,
         env: containerInfo.env,
         port,
       };
     }
-    return undefined;
+    throw new Error('Failed to get Pod Info.');
   }
 
   /**
@@ -1084,5 +1085,21 @@ export default class K8sUtil {
     });
 
     informer.start();
+  }
+
+  /**
+   * Get Container Log.
+   * @params containerId
+   * @params namespace
+  */
+  getContainerLog = async (containerId: string, namespace: string) => {
+    const podInfo = await this.getPodInfo(containerId, namespace);
+    if (podInfo.podName) {
+      const result = await this.coreApi.readNamespacedPodLog(podInfo.podName, namespace,
+        undefined, undefined, undefined, undefined, undefined,
+        undefined, undefined, undefined, true);
+      return result.body;
+    }
+    throw new Error('not Exist Pod Name.');
   }
 }
