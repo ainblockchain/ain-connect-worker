@@ -815,6 +815,7 @@ export default class K8sUtil {
               allResourcelimits: limits,
               isConnectPod: !!(item.metadata.labels.ainConnect),
               containerId: item.metadata.labels.app,
+              labels: item.metadata.labels,
               targetNodeName: item.spec.nodeName,
               name: item.metadata.name,
               namespaceId: item.metadata.namespace,
@@ -958,6 +959,7 @@ export default class K8sUtil {
       const podInfo = {
         targetNodeName: pod.spec.nodeName as string,
         allResourcelimits,
+        labels: pod.metadata.labels,
         containerId: pod.metadata.labels.app,
         isConnectPod: !!(pod.metadata.labels.ainConnect),
         name: pod.metadata.name as string,

@@ -78,6 +78,7 @@ export type PodInfo = {
   targetNodeName: string,
   isConnectPod: boolean,
   containerId: string,
+  labels: {[key: string]: string},
   name: string,
   namespaceId: string,
   status: {
