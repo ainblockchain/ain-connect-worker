@@ -1,6 +1,6 @@
 {
   "name": "@aindev/connect-worker-base",
-  "version": "0.0.37",
+  "version": "0.0.70",
   "description": "AIN Connect Worker Base",
   "repository": {
     "type": "git",
@@ -38,7 +38,9 @@
   "dependencies": {
     "@kubernetes/client-node": "^0.12.2",
     "@types/node": "^12.0.1",
-    "js-base64": "^3.5.2"
+    "@types/sinon": "^9.0.8",
+    "js-base64": "^3.5.2",
+    "sinon": "^9.2.0"
   },
   "scripts": {
     "test": "jest",
