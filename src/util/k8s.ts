@@ -824,12 +824,8 @@ export default class K8sUtil {
                 phase: item.status.phase,
                 message: item.status.message,
                 startTime: item.status.startTime,
-                condition: (item.status.conditions) ? {
-                  type: item.status.conditions[0].type,
-                  status: item.status.conditions[0].status,
-                  reason: item.status.conditions[0].reason,
-                  message: item.status.conditions[0].message,
-                } : undefined,
+                conditions: item.status.conditions,
+                containerStatuses: item.status.containerStatuses,
               },
             };
             podInfos.push(data);
@@ -954,7 +950,8 @@ export default class K8sUtil {
    * @params pod: k8s.V1Pod
   */
   parsePodInfo(pod: k8s.V1Pod) {
-    if (pod.spec && pod.metadata && pod.status && pod.metadata.labels && pod.status.conditions) {
+    if (pod.spec && pod.metadata && pod.status && pod.metadata.labels
+      && pod.status.conditions) {
       const { containers } = pod.spec;
       const allResourcelimits = this.getPodLimit(containers);
       const podInfo = {
@@ -969,12 +966,8 @@ export default class K8sUtil {
           phase: pod.status.phase as types.PodPhase,
           message: pod.status.message,
           startTime: String(pod.status!.startTime),
-          condition: {
-            type: pod.status.conditions[0].type as types.PodCondition,
-            status: (pod.status.conditions[0].status === 'True'),
-            reason: pod.status.conditions[0].reason,
-            message: pod.status.conditions[0].message,
-          },
+          conditions: pod.status.conditions,
+          containerStatuses: pod.status.containerStatuses,
         },
       };
       return podInfo;

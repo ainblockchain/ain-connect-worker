@@ -1,3 +1,5 @@
+import * as k8s from '@kubernetes/client-node';
+
 /* ----------------------------------- K8S --------------------------------- */
 
 export type HwSpec = {
@@ -85,12 +87,8 @@ export type PodInfo = {
     phase: PodPhase,
     message?: string
     startTime?: string
-    condition?: {
-      type: PodCondition,
-      status: boolean, // If success then true.
-      reason?: string,
-      message?: string,
-    }
+    conditions?: k8s.V1PodCondition[]
+    containerStatuses?: k8s.V1ContainerStatus[],
   }
 }
 
