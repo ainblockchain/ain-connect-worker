@@ -668,7 +668,7 @@ export default class K8sUtil {
       namespace, undefined, undefined, undefined, undefined, `app=${name}`,
     );
     const podInfo = res.body.items[0];
-    if (podInfo && podInfo.status && podInfo.spec) {
+    if (podInfo && podInfo.status && podInfo.spec && podInfo.metadata) {
       const containerInfo = podInfo.spec.containers[0];
       const port = {};
       if (containerInfo.ports) {
@@ -677,7 +677,7 @@ export default class K8sUtil {
         }
       }
       return {
-        podName: podInfo.metadata?.name,
+        podName: podInfo.metadata.name,
         resourceStatus: podInfo.status.phase || 'Unknown',
         containerImage: containerInfo.image,
         env: containerInfo.env,
