@@ -1092,12 +1092,12 @@ export default class K8sUtil {
    * @params containerId
    * @params namespace
   */
-  getContainerLog = async (containerId: string, namespace: string) => {
+  getContainerLog = async (containerId: string, namespace: string, sinceSeconds?: number) => {
     const podInfo = await this.getPodInfo(containerId, namespace);
     if (podInfo.podName) {
       const result = await this.coreApi.readNamespacedPodLog(podInfo.podName, namespace,
         undefined, undefined, undefined, undefined, undefined,
-        undefined, undefined, undefined, true);
+        undefined, sinceSeconds, undefined, true);
       return result.body;
     }
     throw new Error('not Exist Pod Name.');
