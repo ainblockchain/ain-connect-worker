@@ -1,47 +1,30 @@
-import * as k8s from '../handler/k8sHandler';
+import K8sUtil from '../util/k8s';
 
 export default class Worker {
   // K8s Handler
-  public apply = k8s.apply
+  protected k8sUtil: K8sUtil;
 
-  public getPodInfo = k8s.getPodInfo
-
-  public getNamespaceJson = k8s.getNamespaceJson
-
-  public getDeploymentJson = k8s.getDeploymentJson
-
-  public getServiceJson = k8s.getServiceJson
-
-  public getVirtualServiceJson = k8s.getVirtualServiceJson
-
-  public getStorageJson = k8s.getStorageJson
-
-  public k8sDeleteNamespace = k8s.deleteNamespace
-
-  public k8sDeleteDeployment = k8s.deleteDeployment
-
-  public k8sDeleteService = k8s.deleteService
-
-  public k8sDeleteVirtualService = k8s.deleteVirtualService
-
-  public k8sDeleteStorage = k8s.deleteStorage
-
-  // @TODO Docker Handler
+  constructor(configPath: string, test: boolean = false) {
+    this.k8sUtil = new K8sUtil(configPath, test);
+  }
 
   // SDK Handler
-  public createNamespace = async (_: any) => ({ statusCode: 0 })
+  protected createNamespace = async (_: any) => {
+    await this.k8sUtil.createNamespace(_);
+    return { namespaceId: _ };
+  }
 
-  public deleteNamespace = async (_: any) => ({ statusCode: 0 })
+  protected deleteNamespace = async (_: any) => ({ })
 
-  public deploy = async (_: any) => ({ statusCode: 0 })
+  protected deploy = async (_: any) => ({ })
 
-  public redeploy = async (_: any) => ({ statusCode: 0 })
+  protected redeploy = async (_: any) => ({ })
 
-  public undeploy = async (_: any) => ({ statusCode: 0 })
+  protected undeploy = async (_: any) => ({ })
 
-  public createStorage = async (_: any) => ({ statusCode: 0 })
+  protected createStorage = async (_: any) => ({ })
 
-  public deleteStorage = async (_: any) => ({ statusCode: 0 })
+  protected deleteStorage = async (_: any) => ({ })
 
-  public getContainerInfo = async (_: any) => ({ statusCode: 0 })
+  protected createSecret = async (_: any) => ({ })
 }

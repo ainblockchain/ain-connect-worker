@@ -12,6 +12,7 @@ module.exports = {
     "@typescript-eslint"
   ],
   "rules": {
+    "dot-notation": 0,
     "no-throw-literal": 0,
     "no-param-reassign": 0,
     "no-restricted-syntax": 0,
