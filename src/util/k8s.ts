@@ -499,16 +499,16 @@ export default class K8sUtil {
    *          [if it is undefined then select from all nodepool]
    * @returns clusterIp
   */
-  async createLocalNfsServer(name: string, capacity: number,
+  async createLocalNfsServer(name: string, capacity: number, namespace: string,
     resourceLimits: types.HwSpec, storageClassName: string,
     accessModes: 'ReadWriteMany' | 'ReadWriteOnce',
     labels?: { [key: string]: string }, nodePoolLabel?: Object) {
     const nfsName = `nfs-${name}`;
 
-    await this.createPersistentVolumeClaim(nfsName, 'default',
+    await this.createPersistentVolumeClaim(nfsName, namespace,
       capacity, storageClassName, accessModes, labels);
 
-    await this.createDeployment(nfsName, 'default', {
+    await this.createDeployment(nfsName, namespace, {
       imagePath: 'k8s.gcr.io/volume-nfs:0.8',
       ports: [2049, 111, 20048],
       resourceLimits,
@@ -518,7 +518,7 @@ export default class K8sUtil {
       },
     }, undefined, undefined, labels, nodePoolLabel, 1, true);
 
-    const result = await this.createService(nfsName, 'default', [2049, 111, 20048], labels);
+    const result = await this.createService(nfsName, namespace, [2049, 111, 20048], labels);
 
     return result['spec']['clusterIP'];
   }
@@ -527,11 +527,11 @@ export default class K8sUtil {
    * Delete NFS Server in Cluster.
    * @params name: Storage Name.
   */
-  async deleteLocalNfsServer(name: string) {
+  async deleteLocalNfsServer(name: string, namespace: string) {
     const nfsName = `nfs-${name}`;
-    await this.deleteResource('service', nfsName, 'default');
-    await this.deleteResource('deployment', nfsName, 'default');
-    await this.deleteResource('persistentVolumeClaim', nfsName, 'default');
+    await this.deleteResource('service', nfsName, namespace);
+    await this.deleteResource('deployment', nfsName, namespace);
+    await this.deleteResource('persistentVolumeClaim', nfsName, namespace);
   }
 
   /**
@@ -651,7 +651,8 @@ export default class K8sUtil {
     } else if (type === 'persistentVolumeClaim' && namespace) {
       await this.coreApi.deleteNamespacedPersistentVolumeClaim(`pv-${name}-claim`, namespace);
     } else if (type === 'storage' && namespace) {
-      await this.coreApi.deleteNamespacedPersistentVolumeClaim(`pv-${name}-claim`, namespace);
+      await this.coreApi.deleteNamespacedPersistentVolumeClaim(`pv-${name}-claim`, namespace)
+        .catch(() => {});
       await this.coreApi.deletePersistentVolume(`pv-${name}`);
     } else {
       throw 'Invalid Params';
@@ -814,8 +815,8 @@ export default class K8sUtil {
             const limits = this.getPodLimit(item.spec.containers);
             const data = {
               allResourcelimits: limits,
-              isConnectPod: !!(item.metadata.labels.ainConnect),
-              containerId: item.metadata.labels.app,
+              isConnectPod: !!(item.metadata.labels && item.metadata.labels.ainConnect),
+              containerId: (item.metadata.labels) ? item.metadata.labels.app : undefined,
               labels: item.metadata.labels,
               targetNodeName: item.spec.nodeName,
               name: item.metadata.name,
