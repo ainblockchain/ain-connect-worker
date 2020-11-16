@@ -695,10 +695,9 @@ export default class K8sUtil {
 
   /**
    * Get Node Information.
-   * @params nodePoolLabel: label for finding NodePool.
-   * @params namespace: Namespace Name.
+   * @params labelInfo
   */
-  async getNodesInfo(nodePoolLabel: string, gpuTypeLabel: string) {
+  async getNodesInfo(nodePoolLabel: string, labelInfo: {[key: string]: string}) {
     const url = `${this.serverAddr}/api/v1/nodes`;
     const opts = {} as request.Options;
     this.config.applyToRequest(opts);
@@ -712,12 +711,15 @@ export default class K8sUtil {
             const nodePool = {};
             const nodes = JSON.parse(_body).items;
             for (const node of nodes) {
+              const labels = {};
+              for (const key of Object.keys(labelInfo)) {
+                labels[key] = node.metadata.labels[labelInfo[key]] || '';
+              }
               const nodePoolName = node.metadata.labels[nodePoolLabel];
-              const gpuType = node.metadata.labels[gpuTypeLabel];
               if (nodePoolName) {
                 if (!nodePool[nodePoolName]) {
                   nodePool[nodePoolName] = JSON.parse(JSON.stringify({
-                    gpuType: gpuType || '',
+                    ...labels,
                     osImage: node.status.nodeInfo.osImage,
                     nodes: {},
                   }));
