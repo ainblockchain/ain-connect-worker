@@ -315,6 +315,7 @@ export default class K8sUtil {
   async createService(
     name: string, namespace: string,
     ports: number[], labels?: {[key: string]: string },
+    isNodePort: boolean = false,
   ) {
     const templateJson = {
       apiVersion: 'v1',
@@ -334,6 +335,10 @@ export default class K8sUtil {
 
     for (const port of ports) {
       templateJson.spec.ports.push({ name: `http${port}`, port, targetPort: port });
+    }
+
+    if (isNodePort) {
+      templateJson.spec['type'] = 'NodePort';
     }
 
     const result = await this.apply(templateJson);
