@@ -719,7 +719,7 @@ export default class K8sUtil {
               if (nodePoolName) {
                 if (!nodePool[nodePoolName]) {
                   nodePool[nodePoolName] = JSON.parse(JSON.stringify({
-                    ...labels,
+                    selectLabels: labels,
                     osImage: node.status.nodeInfo.osImage,
                     nodes: {},
                   }));
