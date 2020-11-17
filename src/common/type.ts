@@ -14,9 +14,10 @@ export type k8sHwSpec = {
   memory: string; // 'Mi'
 };
 
-export type HwStatus = {
-  capacity: HwSpec,
-  allocatable: HwSpec
+export type NodeInfo = {
+  capacity: HwSpec;
+  allocatable: HwSpec;
+  internalIP: string;
 }
 
 export type ContainerSpec = {
@@ -94,10 +95,10 @@ export type PodInfo = {
 
 export type NodePool = {
   [nodePoolName: string]: {
-    gpuType: string,
+    selectLabels: {[key: string]: any},
     osImage: string,
     nodes: {
-      [nodeId: string]: HwStatus
+      [nodeId: string]: NodeInfo;
     }
   }
 };

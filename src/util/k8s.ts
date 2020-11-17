@@ -315,6 +315,7 @@ export default class K8sUtil {
   async createService(
     name: string, namespace: string,
     ports: number[], labels?: {[key: string]: string },
+    isNodePort: boolean = false,
   ) {
     const templateJson = {
       apiVersion: 'v1',
@@ -334,6 +335,10 @@ export default class K8sUtil {
 
     for (const port of ports) {
       templateJson.spec.ports.push({ name: `http${port}`, port, targetPort: port });
+    }
+
+    if (isNodePort) {
+      templateJson.spec['type'] = 'NodePort';
     }
 
     const result = await this.apply(templateJson);
@@ -690,10 +695,9 @@ export default class K8sUtil {
 
   /**
    * Get Node Information.
-   * @params nodePoolLabel: label for finding NodePool.
-   * @params namespace: Namespace Name.
+   * @params labelInfo
   */
-  async getNodesInfo(nodePoolLabel: string, gpuTypeLabel: string) {
+  async getNodesInfo(nodePoolLabel: string, labelInfo: {[key: string]: string}) {
     const url = `${this.serverAddr}/api/v1/nodes`;
     const opts = {} as request.Options;
     this.config.applyToRequest(opts);
@@ -707,17 +711,27 @@ export default class K8sUtil {
             const nodePool = {};
             const nodes = JSON.parse(_body).items;
             for (const node of nodes) {
+              const labels = {};
+              let internalIP = '';
+              for (const addressInfo of node.status.addresses) {
+                if (addressInfo.type === 'InternalIP') {
+                  internalIP = addressInfo.address;
+                }
+              }
+              for (const key of Object.keys(labelInfo)) {
+                labels[key] = node.metadata.labels[labelInfo[key]] || '';
+              }
               const nodePoolName = node.metadata.labels[nodePoolLabel];
-              const gpuType = node.metadata.labels[gpuTypeLabel];
               if (nodePoolName) {
                 if (!nodePool[nodePoolName]) {
                   nodePool[nodePoolName] = JSON.parse(JSON.stringify({
-                    gpuType: gpuType || '',
+                    selectLabels: labels,
                     osImage: node.status.nodeInfo.osImage,
                     nodes: {},
                   }));
                 }
                 nodePool[nodePoolName].nodes[node.metadata.name] = {
+                  internalIP,
                   capacity: this.convertHwSpecNumber(node.status.capacity),
                   allocatable: this.convertHwSpecNumber(node.status.allocatable),
                 };
@@ -1097,3 +1111,7 @@ export default class K8sUtil {
     throw new Error('not Exist Pod Name.');
   }
 }
+
+const a = new K8sUtil('./config.yaml');
+
+a.getNodesInfo('Ainetwork.ai_nodepoolname', {});
