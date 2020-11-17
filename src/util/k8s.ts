@@ -712,6 +712,12 @@ export default class K8sUtil {
             const nodes = JSON.parse(_body).items;
             for (const node of nodes) {
               const labels = {};
+              let internalIP = '';
+              for (const addressInfo of node.status.addresses) {
+                if (addressInfo.type === 'InternalIP') {
+                  internalIP = addressInfo.address;
+                }
+              }
               for (const key of Object.keys(labelInfo)) {
                 labels[key] = node.metadata.labels[labelInfo[key]] || '';
               }
@@ -725,6 +731,7 @@ export default class K8sUtil {
                   }));
                 }
                 nodePool[nodePoolName].nodes[node.metadata.name] = {
+                  internalIP,
                   capacity: this.convertHwSpecNumber(node.status.capacity),
                   allocatable: this.convertHwSpecNumber(node.status.allocatable),
                 };
@@ -1104,3 +1111,7 @@ export default class K8sUtil {
     throw new Error('not Exist Pod Name.');
   }
 }
+
+const a = new K8sUtil('./config.yaml');
+
+a.getNodesInfo('Ainetwork.ai_nodepoolname', {});
