@@ -687,6 +687,7 @@ export default class K8sUtil {
         resourceStatus: podInfo.status.phase || 'Unknown',
         containerImage: containerInfo.image,
         env: containerInfo.env,
+        nodeName: podInfo.spec.nodeName,
         port,
       };
     }
