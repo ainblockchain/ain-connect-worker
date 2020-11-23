@@ -1112,7 +1112,3 @@ export default class K8sUtil {
     throw new Error('not Exist Pod Name.');
   }
 }
-
-const a = new K8sUtil('./config.yaml');
-
-a.getNodesInfo('Ainetwork.ai_nodepoolname', {});
