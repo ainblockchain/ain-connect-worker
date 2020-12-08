@@ -762,14 +762,14 @@ export default class K8sUtil {
         if (container.resources.limits.cpu
           && this.convertUnitMemory(container.resources.limits.cpu) !== 0) {
           limits.cpu += this.convertUnitCpu(container.resources.limits.cpu);
-        } else if (container.resources.requests?.cpu) {
+        } else if (container.resources.requests && container.resources.requests.cpu) {
           limits.cpu += this.convertUnitCpu(container.resources.requests.cpu);
         }
         // Memory
         if (container.resources.limits.memory
           && this.convertUnitMemory(container.resources.limits.memory) !== 0) {
           limits.memory += this.convertUnitMemory(container.resources.limits.memory);
-        } else if (container.resources.requests?.memory) {
+        } else if (container.resources.requests && container.resources.requests.memory) {
           limits.memory += this.convertUnitMemory(container.resources.requests.memory);
         }
         // GPU
