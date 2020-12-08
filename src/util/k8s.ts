@@ -760,7 +760,7 @@ export default class K8sUtil {
       if (container.resources && container.resources.limits) {
         // CPU
         if (container.resources.limits.cpu
-          && this.convertUnitMemory(container.resources.limits.cpu) !== 0) {
+          && this.convertUnitCpu(container.resources.limits.cpu) !== 0) {
           limits.cpu += this.convertUnitCpu(container.resources.limits.cpu);
         } else if (container.resources.requests && container.resources.requests.cpu) {
           limits.cpu += this.convertUnitCpu(container.resources.requests.cpu);
