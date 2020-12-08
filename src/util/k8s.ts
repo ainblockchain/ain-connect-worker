@@ -757,23 +757,23 @@ export default class K8sUtil {
       gpu: 0,
     };
     for (const container of containers) {
-      if (container.resources && container.resources.limits) {
+      if (container.resources) {
         // CPU
-        if (container.resources.limits.cpu
+        if (container.resources.limits && container.resources.limits.cpu
           && this.convertUnitCpu(container.resources.limits.cpu) > 0) {
           limits.cpu += this.convertUnitCpu(container.resources.limits.cpu);
         } else if (container.resources.requests && container.resources.requests.cpu) {
           limits.cpu += this.convertUnitCpu(container.resources.requests.cpu);
         }
         // Memory
-        if (container.resources.limits.memory
+        if (container.resources.limits && container.resources.limits.memory
           && this.convertUnitMemory(container.resources.limits.memory) > 0) {
           limits.memory += this.convertUnitMemory(container.resources.limits.memory);
         } else if (container.resources.requests && container.resources.requests.memory) {
           limits.memory += this.convertUnitMemory(container.resources.requests.memory);
         }
         // GPU
-        if (container.resources.limits['nvidia.com/gpu']) {
+        if (container.resources.limits && container.resources.limits['nvidia.com/gpu']) {
           limits.gpu += parseInt(container.resources.limits['nvidia.com/gpu'], 10);
         }
       }
