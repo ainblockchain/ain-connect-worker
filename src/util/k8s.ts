@@ -507,21 +507,21 @@ export default class K8sUtil {
   async createLocalNfsServer(name: string, capacity: number, namespace: string,
     resourceLimits: types.HwSpec, storageClassName: string,
     accessModes: 'ReadWriteMany' | 'ReadWriteOnce',
-    labels?: { [key: string]: string }, nodePoolLabel?: Object) {
+    labels?: { [key: string]: string }, nodePoolLabel?: Object,
+    nfsImagePath?: string, dockerSecretName?: string) {
     const nfsName = `nfs-${name}`;
-
     await this.createPersistentVolumeClaim(nfsName, namespace,
       capacity, storageClassName, accessModes, labels);
 
     await this.createDeployment(nfsName, namespace, {
-      imagePath: 'k8s.gcr.io/volume-nfs:0.8',
+      imagePath: (nfsImagePath === '' || !nfsImagePath) ? 'k8s.gcr.io/volume-nfs:0.8' : nfsImagePath,
       ports: [2049, 111, 20048],
       resourceLimits,
     }, {
       [nfsName]: {
         mountPath: '/exports',
       },
-    }, undefined, undefined, labels, nodePoolLabel, 1, true);
+    }, undefined, dockerSecretName, labels, nodePoolLabel, 1, true);
 
     const result = await this.createService(nfsName, namespace, [2049, 111, 20048], labels);
 
