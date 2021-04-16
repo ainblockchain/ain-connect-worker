@@ -507,21 +507,21 @@ export default class K8sUtil {
   async createLocalNfsServer(name: string, capacity: number, namespace: string,
     resourceLimits: types.HwSpec, storageClassName: string,
     accessModes: 'ReadWriteMany' | 'ReadWriteOnce',
-    labels?: { [key: string]: string }, nodePoolLabel?: Object) {
+    labels?: { [key: string]: string }, nodePoolLabel?: Object,
+    nfsImagePath?: string, dockerSecretName?: string) {
     const nfsName = `nfs-${name}`;
-
     await this.createPersistentVolumeClaim(nfsName, namespace,
       capacity, storageClassName, accessModes, labels);
 
     await this.createDeployment(nfsName, namespace, {
-      imagePath: 'k8s.gcr.io/volume-nfs:0.8',
+      imagePath: (nfsImagePath === '' || !nfsImagePath) ? 'k8s.gcr.io/volume-nfs:0.8' : nfsImagePath,
       ports: [2049, 111, 20048],
       resourceLimits,
     }, {
       [nfsName]: {
         mountPath: '/exports',
       },
-    }, undefined, undefined, labels, nodePoolLabel, 1, true);
+    }, undefined, dockerSecretName, labels, nodePoolLabel, 1, true);
 
     const result = await this.createService(nfsName, namespace, [2049, 111, 20048], labels);
 
@@ -757,23 +757,23 @@ export default class K8sUtil {
       gpu: 0,
     };
     for (const container of containers) {
-      if (container.resources) {
+      if (container.resources && container.resources.limits) {
         // CPU
-        if (container.resources.limits && container.resources.limits.cpu
+        if (container.resources.limits.cpu
           && this.convertUnitCpu(container.resources.limits.cpu) > 0) {
           limits.cpu += this.convertUnitCpu(container.resources.limits.cpu);
         } else if (container.resources.requests && container.resources.requests.cpu) {
           limits.cpu += this.convertUnitCpu(container.resources.requests.cpu);
         }
         // Memory
-        if (container.resources.limits && container.resources.limits.memory
+        if (container.resources.limits.memory
           && this.convertUnitMemory(container.resources.limits.memory) > 0) {
           limits.memory += this.convertUnitMemory(container.resources.limits.memory);
         } else if (container.resources.requests && container.resources.requests.memory) {
           limits.memory += this.convertUnitMemory(container.resources.requests.memory);
         }
         // GPU
-        if (container.resources.limits && container.resources.limits['nvidia.com/gpu']) {
+        if (container.resources.limits['nvidia.com/gpu']) {
           limits.gpu += parseInt(container.resources.limits['nvidia.com/gpu'], 10);
         }
       }
