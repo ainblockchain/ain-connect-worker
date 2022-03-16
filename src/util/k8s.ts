@@ -975,16 +975,17 @@ export default class K8sUtil {
    * @params pod: k8s.V1Pod
   */
   parsePodInfo(pod: k8s.V1Pod) {
-    if (pod.spec && pod.metadata && pod.status && pod.metadata.labels
+    const labels = pod.metadata.labels || {};
+    if (pod.spec && pod.metadata && pod.status && labels
       && pod.status.conditions) {
       const { containers } = pod.spec;
       const allResourcelimits = this.getPodLimit(containers);
       const podInfo = {
         targetNodeName: pod.spec.nodeName as string,
         allResourcelimits,
-        labels: pod.metadata.labels,
-        containerId: pod.metadata.labels.app,
-        isConnectPod: !!(pod.metadata.labels.ainConnect),
+        labels,
+        containerId: labels.app,
+        isConnectPod: !!(labels.ainConnect),
         name: pod.metadata.name as string,
         namespaceId: pod.metadata.namespace as string,
         status: {
