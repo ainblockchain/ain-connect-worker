@@ -75,9 +75,12 @@ export default class K8sUtil {
    * @params k8sUnit: k8s MEMORY resource Spec (ex. 10Gi).
   */
   convertUnitMemory(k8sUnit: string) {
-    if (k8sUnit.includes('Ki') || k8sUnit.includes('K')) return Math.round(parseInt(k8sUnit, 10) / 1000);
-    if (k8sUnit.includes('Gi') || k8sUnit.includes('G')) return parseInt(k8sUnit, 10) * 1000;
-    return parseInt(k8sUnit, 10);
+    const _ = parseInt(k8sUnit, 10);
+    if (k8sUnit.includes('Ki')) return Math.round(_ / 1024);
+    else if (k8sUnit.includes('K')) return Math.round(_ / 1000);
+    else if (k8sUnit.includes('Gi')) return _ * 1024;
+    else if (k8sUnit.includes('G')) return _ * 1000;
+    return _;
   }
 
   /**
