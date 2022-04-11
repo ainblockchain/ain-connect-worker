@@ -978,7 +978,7 @@ export default class K8sUtil {
    * @params pod: k8s.V1Pod
   */
   parsePodInfo(pod: k8s.V1Pod) {
-    const labels = pod.metadata.labels || {};
+    const labels = pod?.metadata?.labels || {};
     if (pod.spec && pod.metadata && pod.status && labels
       && pod.status.conditions) {
       const { containers } = pod.spec;

@@ -27,7 +27,7 @@ describe('K8sUtil', () => {
     const result3 = k8sUtil.convertUnitMemory('10000Ki');
     const result4 = k8sUtil.convertUnitMemory('10Mi');
 
-    expect(10000).toEqual(result1);
+    expect(10240).toEqual(result1);
     expect(10000).toEqual(result2);
     expect(10).toEqual(result3);
     expect(10).toEqual(result4);
